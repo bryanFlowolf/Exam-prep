@@ -21,7 +21,7 @@ export default function Login() {
         ? 'Se han enviado demasiados enlaces en poco tiempo. Espera unos minutos y vuelve a intentarlo; si ya te llegó un enlace antes, puedes usar ese.'
         : error.message.includes('acceso') || error.message.includes('Database error')
           ? 'Este email no tiene acceso. Pide a un administrador que lo añada a la lista de acceso.'
-          : 'No se ha podido enviar el enlace. Revisa el email e inténtalo de nuevo.');
+          : `No se ha podido enviar el enlace. Detalle: ${error.message}${status ? ` (${status})` : ''}`);
     } else setState('sent');
   };
 
