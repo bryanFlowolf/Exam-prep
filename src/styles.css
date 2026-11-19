@@ -164,3 +164,7 @@ table.simple th, table.simple td { text-align: left; padding: 6px 8px; border-bo
 .center { text-align: center; padding: 60px 0; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Login: aviso de spam */
+.spam-notice { font-size: 13.5px; line-height: 1.5; padding: 10px 12px; border-radius: 6px; background: var(--flag-soft); color: var(--ink); border-left: 3px solid var(--flag); }
+.spam-notice.strong { font-size: 14.5px; padding: 12px 14px; }
