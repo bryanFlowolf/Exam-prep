@@ -4929,6 +4929,267 @@
     1
    ],
    "explanation": "Lo que debe ocurrir siempre se garantiza con un hook; CLAUDE.md, commands y Skills dependen de que se usen."
+  },
+  {
+   "domain": "D4",
+   "stem": "Una aplicación rechaza a veces preguntas que están dentro de su ámbito, incluso algunas que antes respondía bien. ¿Cuál es el primer paso de la investigación?",
+   "options": [
+    "Comparar las preguntas rechazadas con las respondidas para ver qué cambió entre unas y otras",
+    "Probar si eliminar o ajustar esas instrucciones del prompt resuelve el comportamiento",
+    "Analizar en los logs si los rechazos se agrupan por patrones de entrada, tipos de pregunta o periodos",
+    "Examinar las trazas de las peticiones rechazadas para ver qué dispara el rechazo: entrada, system prompt u otro contexto"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "Primero se mira la evidencia directa: la traza completa muestra todo lo que recibió el modelo. Comparar solo preguntas ignora el contexto, ajustar instrucciones presupone la causa y las estadísticas dicen cuándo, no por qué.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un equipo quiere etiquetas de categoría deterministas en un prompt de enrutado y piensa poner temperature a 0. ¿Qué debe saber?",
+   "options": [
+    "La temperature es el parámetro que define las categorías de enrutado",
+    "Poner temperature a 0 hace la Messages API totalmente determinista",
+    "La temperature es un campo obligatorio en todas las peticiones",
+    "En Claude Opus 4.7 y posteriores, una temperature de 0 devuelve un error 400"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "En los modelos actuales, una temperature (o top_p/top_k) distinta del valor por defecto da un 400. Las etiquetas consistentes se consiguen restringiendo la salida: una herramienta strict con enum o structured outputs, más un prompt estable.",
+   "source": "bank"
+  },
+  {
+   "domain": "D6",
+   "stem": "Una instrucción del operador debe aplicarse a mitad de conversación sin invalidar el prefijo cacheado. ¿Cuál es el enfoque soportado en los modelos que lo permiten?",
+   "options": [
+    "Reescribir el parámetro system de nivel superior y reenviar toda la conversación",
+    "Enviar la instrucción como cabecera HTTP personalizada en la siguiente petición",
+    "Anteponer la instrucción al primer mensaje del usuario en el historial",
+    "Añadir un mensaje con rol system al array messages después de un turno user"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "La caché se basa en el prefijo (tools, system, messages): cambiar system o el primer mensaje invalida todo lo posterior. Un mensaje system añadido al final mantiene el prefijo y tiene autoridad de operador. Debe ir tras un turno user y no puede ser el primer elemento de messages.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "¿Qué contiene la respuesta cuando se activan las citas en un bloque de documento?",
+   "options": [
+    "Bloques de texto con un array citations que apunta a la fuente",
+    "Una lista de enlaces web externos que respaldan cada frase",
+    "Una petición posterior aparte con la bibliografía de la respuesta",
+    "El documento reescrito con marcas de nota al pie insertadas por el modelo"
+   ],
+   "correct": [
+    0
+   ],
+   "explanation": "La respuesta se divide en varios bloques de texto y los citados llevan citations con el texto citado y su ubicación: char_location en texto plano, page_location en PDF, content_block_location en contenido personalizado.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Una petición con varias imágenes grandes en base64 falla con HTTP 413. ¿Qué ha ocurrido?",
+   "options": [
+    "La organización ha superado su límite de gasto mensual configurado",
+    "El prompt ha superado la ventana de contexto del modelo en tokens",
+    "El cuerpo de la petición ha superado el tamaño máximo del endpoint",
+    "Se han enviado demasiadas peticiones dentro de la ventana de rate limit"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "413 request_too_large indica que el cuerpo supera el máximo del endpoint (32 MB en la Messages API), un límite en bytes, no en tokens. Se resuelve reduciendo las imágenes o usando la Files API.",
+   "source": "bank"
+  },
+  {
+   "domain": "D5",
+   "stem": "Un pipeline extrae entidades con un modelo rápido, las enriquece con herramientas en un modelo intermedio y redacta el informe final con el modelo más potente. ¿Cuál es el principal beneficio?",
+   "options": [
+    "Pone los modelos rápidos en los pasos rutinarios y el más potente en la síntesis",
+    "Garantiza que el informe final nunca necesitará revisión humana",
+    "Elimina la necesidad de gestionar errores de herramientas en el enriquecimiento",
+    "Garantiza menos tokens totales que una sola llamada al modelo más potente"
+   ],
+   "correct": [
+    0
+   ],
+   "explanation": "Elegir modelo por etapa equilibra coste, latencia y calidad. El ahorro viene del precio por token, no de usar menos tokens: un pipeline de varias etapas suele procesar más tokens en total.",
+   "source": "bank"
+  },
+  {
+   "domain": "D6",
+   "stem": "Un prompt extrae action items de transcripciones de reuniones ruidosas, con hablantes solapados y conversaciones paralelas. ¿Qué DOS prácticas mejoran más la fiabilidad de lo extraído? (Elige 2)",
+   "options": [
+    "Pedir al modelo que razone paso a paso internamente antes de emitir la lista final y que devuelva solo la lista",
+    "Eliminar todas las etiquetas de hablante para reducir tokens antes de enviar la transcripción",
+    "Poner max_tokens lo más alto posible para que nunca se corte un action item",
+    "Pedir que incluya toda frase que mencione una tarea, sin importar quién la dijo",
+    "Dar dos o tres ejemplos few-shot con un fragmento ruidoso y la salida exacta esperada"
+   ],
+   "correct": [
+    0,
+    4
+   ],
+   "explanation": "Los ejemplos enseñan qué cuenta como action item; el razonamiento permite aplicar ese criterio a casos ambiguos (tareas reasignadas, ideas sueltas, responsables). Incluirlo todo genera falsos positivos y pierde al responsable; quitar hablantes elimina información esencial.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "¿Cómo debe una aplicación integrar un servidor MCP que proporciona recursos de conocimiento de la empresa?",
+   "options": [
+    "Convertir el servidor en un recurso estático servido por el front end",
+    "Conectar el host, leer los recursos relevantes y añadir herramientas para acciones",
+    "Prescindir del servidor y confiar en lo que el modelo aprendió en el entrenamiento",
+    "Enviar por email la clave privada del servidor a cada usuario que se conecte"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "El host crea un cliente para el servidor, descubre los recursos con el método list, lee los relevantes al contexto y usa las tools del servidor cuando hace falta una acción en lugar de una lectura.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "¿Por qué conviene procesar los inputs de tool_use con un parser JSON en lugar de buscar cadenas en el bloque serializado?",
+   "options": [
+    "Porque el contrato de la API de tool use prohíbe el string matching",
+    "Porque el escapado de Unicode y de barras puede variar entre modelos",
+    "Porque el parser también valida los argumentos contra el esquema de la herramienta",
+    "Porque los inputs llegan en YAML y el parser JSON los convierte"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "El mismo valor puede serializarse distinto (\"café\" o \"caf\\u00e9\", \"a/b\" o \"a\\/b\"), así que un texto que hoy coincide puede dejar de hacerlo tras un cambio de modelo. Parsear da los valores sea cual sea el escapado. Parsear no valida contra el esquema: eso es un paso aparte.",
+   "source": "bank"
+  },
+  {
+   "domain": "D1",
+   "stem": "¿En qué se diferencia un task budget orientativo del parámetro max_tokens?",
+   "options": [
+    "El task budget sustituye a max_tokens, que no se puede enviar junto a él",
+    "El budget solo se aplica a tokens de entrada; max_tokens cubre la salida",
+    "El budget permite al modelo dosificarse; max_tokens es un tope duro que no ve",
+    "El task budget se aplica por respuesta; max_tokens abarca toda la ejecución"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "El task budget indica al modelo cuánto margen tiene en una ejecución agéntica para que priorice y termine bien. max_tokens es un tope por respuesta que el modelo no conoce y que simplemente trunca la salida.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "El historial que envía una aplicación termina con un turno del asistente que contiene bloques tool_use (stop_reason tool_use). ¿Qué debe hacer la aplicación para un bucle de herramientas correcto?",
+   "options": [
+    "Reenviar la misma petición al endpoint heredado de Text Completions",
+    "Descartar los bloques tool_use y mostrar el texto que ya se había generado",
+    "Ejecutar las herramientas y devolver bloques tool_result en un mensaje user",
+    "Descartar la conversación y repetir la petición con las herramientas desactivadas"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "La aplicación ejecuta las herramientas y envía un tool_result por cada tool_use (mismo tool_use_id) en el siguiente mensaje user. El bucle sigue hasta que Claude responde sin pedir más herramientas. Si el corte fuera por max_tokens, el bloque podría estar incompleto y habría que repetir con más tokens.",
+   "source": "bank"
+  },
+  {
+   "domain": "D4",
+   "stem": "Una aplicación con Claude lleva un año en producción y el equipo solo escribe tests ad hoc por funcionalidad. Quiere formalizar su estrategia de testing. ¿Qué enfoque debería adoptar?",
+   "options": [
+    "Adoptar TDD: escribir tests unitarios antes de cada funcionalidad y exigir que pasen antes del merge",
+    "Definir tests unitarios para funciones, de integración para la integración con Claude y end-to-end para los flujos críticos, aplicados en todo el código",
+    "Seguir con tests ad hoc por funcionalidad y añadir una revisión por pares que compruebe la cobertura de cada test",
+    "Definir un único enfoque basado en tests end-to-end y aplicarlo a todas las funcionalidades nuevas"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "Formalizar es definir capas con propósito claro (unitarios, integración con el modelo, E2E) y aplicarlas de forma consistente. TDD dice cuándo escribir tests, no qué tipos hacen falta, y deja sin cubrir la integración con Claude.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "Un servidor MCP expone herramientas para gestionar infraestructura cloud y lo usarán varios clientes. Se quiere que las llamadas sean eficientes y que el servidor escale. ¿Qué DOS prácticas debe implementar? (Elige 2)",
+   "options": [
+    "Cachear en el servidor los resultados de llamadas costosas y devolverlos ante peticiones idénticas",
+    "Diseñar las herramientas para que sean idempotentes cuando sea posible",
+    "Usar un único lock global que serialice todas las llamadas a herramientas",
+    "Procesar cada llamada sin estado, para que cualquier instancia pueda atender cualquier petición",
+    "Guardar el estado de sesión en memoria de cada instancia para seguir a cada cliente"
+   ],
+   "correct": [
+    1,
+    3
+   ],
+   "explanation": "Stateless permite escalar horizontalmente detrás de un balanceador; la idempotencia hace seguros los reintentos. Cachear estado de infraestructura devuelve datos obsoletos y no aplica a acciones; el lock global y la sesión en memoria impiden escalar.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "En producción, algunas peticiones fallan con overloaded_error y otras devuelven stop_reason max_tokens. ¿Qué DOS acciones son las adecuadas? (Elige 2)",
+   "options": [
+    "Reintentar con backoff exponencial y jitter las peticiones que devuelven overloaded_error",
+    "Convertir los overloaded_error en respuestas correctas devolviendo la última respuesta cacheada para el mismo prompt",
+    "Reintentar con los mismos parámetros toda petición con stop_reason max_tokens hasta que termine",
+    "Bajar max_tokens a 1 cuando haya overloaded_error para que el servidor tenga menos trabajo",
+    "Tratar max_tokens como señal de truncado y subir max_tokens o acortar el prompt o la conversación"
+   ],
+   "correct": [
+    0,
+    4
+   ],
+   "explanation": "overloaded_error (529) es transitorio: se reintenta con backoff y jitter. max_tokens es un truncado por configuración: repetir igual da el mismo corte, hay que cambiar parámetros. Cachear oculta el error y puede devolver datos que no corresponden.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "¿Cuál de estos es un requisito no funcional para un asistente de búsqueda basado en Claude?",
+   "options": [
+    "El asistente debe negarse a responder preguntas fuera del catálogo de productos",
+    "El percentil 95 del tiempo de respuesta debe quedar por debajo de dos segundos bajo carga",
+    "El asistente debe citar el identificador del documento usado para cada afirmación",
+    "El asistente debe devolver como máximo cinco resultados por consulta"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "Un requisito no funcional restringe cómo de bien funciona el sistema (rendimiento, disponibilidad, coste), no qué hace. Citar fuentes, limitar resultados o rechazar temas describen el contenido de la salida: son funcionales.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "¿Cuándo encaja de forma natural el transporte stdio en un servidor MCP?",
+   "options": [
+    "Un servicio multi-tenant solo de navegador sin ningún proceso local que lanzar",
+    "Un proceso auxiliar local que lanza el host y que se comunica por stdin y stdout",
+    "Un servidor pensado para llamarse sin ningún host MCP de por medio",
+    "Un pipeline cuyo único propósito es entrenar modelos base sin conexión"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "stdio sirve para un servidor que corre como proceso hijo local del host e intercambia JSON-RPC por entrada y salida estándar, sin red. Los servicios remotos o multi-tenant usan Streamable HTTP; entrenar modelos no tiene relación con MCP.",
+   "source": "bank"
+  },
+  {
+   "domain": "D8",
+   "stem": "Una herramienta integrada cubre casi todo un caso de uso, pero le falta una funcionalidad concreta. El equipo duda entre usarla o construir una herramienta propia. ¿Cómo decidir?",
+   "options": [
+    "Revisar la documentación de la integrada y comprobar si basta tal cual, sin ninguna modificación ni extensión",
+    "Buscar si el equipo ya construyó herramientas propias parecidas y seguir el precedente para mantener la coherencia",
+    "Estimar el esfuerzo de la herramienta propia y ver si su flexibilidad justifica el coste de desarrollo y mantenimiento",
+    "Evaluar si la funcionalidad que falta se cubre extendiendo la integrada o justifica una propia, y decidir en consecuencia"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "La decisión gira en torno a la pieza que falta y compara las dos alternativas reales. Evaluar solo una opción (la integrada sin cambios o la propia) o decidir por precedentes da un análisis parcial.",
+   "source": "bank"
   }
  ]
 }
