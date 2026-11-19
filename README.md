@@ -25,6 +25,7 @@ Los emails solo están en el sistema de autenticación de Supabase, no en las ta
 2. En **SQL Editor**, ejecuta en este orden el contenido de:
    - `supabase/migrations/20261119000000_init.sql` (tablas y reglas de privacidad);
    - `supabase/migrations/20261119000100_grants.sql` (permisos de tabla; los proyectos nuevos de Supabase no los conceden solos).
+   - `supabase/migrations/20261119000200_keepalive.sql` (función mínima para evitar la pausa por inactividad del plan gratuito).
 3. En **SQL Editor**, ejecuta `supabase/seed.sql` para cargar el examen CCDV-F.
 4. En **Authentication → URL Configuration**:
    - **Site URL:** la URL de Vercel (por ejemplo `https://exam-prep.vercel.app`).
@@ -48,7 +49,16 @@ Los emails solo están en el sistema de autenticación de Supabase, no en las ta
    ```
 3. Recarga la app: verás **Administración**. Desde ahí puedes nombrar a otros administradores.
 
-### 4. Restringir quién se registra (recomendado)
+### 4. Evitar la pausa por inactividad (plan gratuito de Supabase)
+
+Supabase pausa los proyectos gratuitos tras una semana sin actividad. El workflow `.github/workflows/keepalive.yml` llama a `keepalive()` cada 3 días para evitarlo.
+
+1. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**, crea `SUPABASE_URL` y `SUPABASE_ANON_KEY` con los mismos valores que en Vercel.
+2. En **Actions → Supabase keepalive → Run workflow**, lánzalo una vez a mano y comprueba que termina en verde.
+
+GitHub desactiva los workflows programados de repositorios sin commits durante 60 días: si pasa, reactívalo en la pestaña Actions. Con el plan Pro de Supabase no hay pausa y este workflow no hace falta.
+
+### 5. Restringir quién se registra (recomendado)
 
 Con la lista de acceso vacía, cualquiera con un email puede registrarse. En **Administración → Lista de acceso** añade:
 - `@tuempresa.com` para todo el dominio de la empresa;
