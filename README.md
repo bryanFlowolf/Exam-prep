@@ -22,7 +22,9 @@ Los emails solo están en el sistema de autenticación de Supabase, no en las ta
 ### 1. Supabase
 
 1. Crea un proyecto en [supabase.com](https://supabase.com) (región UE si los usuarios están en Europa).
-2. En **SQL Editor**, ejecuta el contenido de `supabase/migrations/20261119000000_init.sql`.
+2. En **SQL Editor**, ejecuta en este orden el contenido de:
+   - `supabase/migrations/20261119000000_init.sql` (tablas y reglas de privacidad);
+   - `supabase/migrations/20261119000100_grants.sql` (permisos de tabla; los proyectos nuevos de Supabase no los conceden solos).
 3. En **SQL Editor**, ejecuta `supabase/seed.sql` para cargar el examen CCDV-F.
 4. En **Authentication → URL Configuration**:
    - **Site URL:** la URL de Vercel (por ejemplo `https://exam-prep.vercel.app`).
@@ -100,7 +102,7 @@ npm run dev
 
 - **Aislamiento de datos (RLS):** con un Postgres 16 local,
   ```bash
-  psql -d prueba -f supabase/tests/mock_supabase.sql -f supabase/migrations/20261119000000_init.sql -f supabase/seed.sql
+  psql -d prueba -f supabase/tests/mock_supabase.sql -f supabase/migrations/20261119000000_init.sql -f supabase/migrations/20261119000100_grants.sql -f supabase/seed.sql
   psql -d prueba -f supabase/tests/rls_test.sql   # todas las líneas deben decir OK
   ```
 - **Interfaz sin backend:** `npx vite --config test/vite.mock.config.ts` arranca la app con un Supabase simulado en memoria.
