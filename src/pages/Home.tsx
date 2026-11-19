@@ -9,7 +9,10 @@ export default function Home() {
   const [exams, setExams] = useState<(Exam & { question_count: number })[] | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => { listExams().then(setExams).catch(() => setError('No se han podido cargar los exámenes.')); }, []);
+  useEffect(() => {
+    listExams().then(setExams).catch((e: { message?: string; code?: string }) =>
+      setError(`No se han podido cargar los exámenes. Detalle: ${e?.message || 'error desconocido'}${e?.code ? ` (${e.code})` : ''}`));
+  }, []);
 
   const vendors = exams ? [...new Set(exams.map((e) => e.vendor))] : [];
 
