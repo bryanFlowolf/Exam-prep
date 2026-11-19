@@ -16,9 +16,12 @@ export default function Login() {
     });
     if (error) {
       setState('idle');
-      setError(error.message.includes('acceso') || error.message.includes('Database error')
-        ? 'Este email no tiene acceso. Pide a un administrador que lo añada a la lista de acceso.'
-        : 'No se ha podido enviar el enlace. Revisa el email e inténtalo de nuevo.');
+      const status = (error as { status?: number }).status;
+      setError(status === 429 || /rate limit|too many/i.test(error.message)
+        ? 'Se han enviado demasiados enlaces en poco tiempo. Espera unos minutos y vuelve a intentarlo; si ya te llegó un enlace antes, puedes usar ese.'
+        : error.message.includes('acceso') || error.message.includes('Database error')
+          ? 'Este email no tiene acceso. Pide a un administrador que lo añada a la lista de acceso.'
+          : 'No se ha podido enviar el enlace. Revisa el email e inténtalo de nuevo.');
     } else setState('sent');
   };
 
