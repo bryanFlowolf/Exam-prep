@@ -4,7 +4,7 @@ Aplicación para preparar certificaciones: simulacros con el reparto oficial por
 
 - **Frontend:** Vite + React + TypeScript, desplegado en Vercel.
 - **Backend:** Supabase (Postgres con Row Level Security y login por enlace mágico al email).
-- **Contenido inicial:** Claude Certified Developer – Foundations (336 preguntas de práctica, `content/exams/anthropic-ccdv-f.json`).
+- **Contenido inicial:** Claude Certified Developer – Foundations (353 preguntas de práctica, `content/exams/anthropic-ccdv-f.json`).
 
 ## Qué ve cada persona
 

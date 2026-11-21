@@ -5190,6 +5190,265 @@
    ],
    "explanation": "La decisión gira en torno a la pieza que falta y compara las dos alternativas reales. Evaluar solo una opción (la integrada sin cambios o la propia) o decidir por precedentes da un análisis parcial.",
    "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un banco pide un asistente para su equipo de riesgos y añade: \"los datos de clientes no pueden salir de la Unión Europea\". ¿Cómo debe tratar el desarrollador este requisito?",
+   "options": [
+    "Como una preferencia de estilo que se documenta en el system prompt para que el modelo no mencione datos de fuera de la UE",
+    "Como un requisito funcional que se cumple pidiendo al modelo que no guarde datos personales entre conversaciones",
+    "Como un detalle de despliegue que se puede revisar después del piloto, cuando se conozca el volumen real de uso",
+    "Como un requisito de infraestructura que decide dónde se procesan y guardan los datos, verificado antes de elegir plataforma"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "La residencia de datos es una restricción de infraestructura y cumplimiento: decide la plataforma (API directa, Bedrock o Vertex AI), la región y dónde se guardan logs y caché. No se resuelve con instrucciones al modelo y hay que verificarla antes de diseñar, no después del piloto.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "En la toma de requisitos de un asistente de soporte aparecen estas frases. ¿Cuál es un requisito funcional?",
+   "options": [
+    "El 95% de las respuestas debe llegar en menos de tres segundos con la carga de un lunes por la mañana",
+    "El asistente debe consultar el estado de un pedido en el ERP a partir de su número y explicárselo al cliente",
+    "Los registros de conversaciones deben conservarse 12 meses en el almacenamiento cifrado de la empresa",
+    "La solución debe desplegarse en la cuenta de nube que la empresa ya tiene contratada y auditada"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "Un requisito funcional describe qué hace el sistema: consultar un pedido y explicarlo. La latencia es un requisito no funcional, y la retención de logs y la cuenta de nube son requisitos de infraestructura y cumplimiento.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Dirección fija el objetivo de negocio \"reducir un 30% el tiempo medio de resolución de tickets con Claude\". ¿Cuál es el primer paso para convertirlo en requisitos del sistema?",
+   "options": [
+    "Elegir el modelo más capaz disponible, porque así el sistema tendrá más margen para alcanzar el objetivo de negocio",
+    "Construir un prototipo de chatbot general y pedir a los agentes de soporte que lo usen durante un mes para ver el efecto",
+    "Pedir a Claude que redacte una lista de requisitos a partir del objetivo y usarla como especificación del proyecto",
+    "Medir la situación actual y localizar en qué pasos se va el tiempo, para decidir qué tareas asume Claude y cómo se medirá"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "Un objetivo de negocio se traduce en requisitos cuando se conoce la línea base y dónde está el problema: clasificar, buscar información, redactar respuestas. De ahí salen las tareas concretas, sus criterios de éxito y las métricas para comprobar el 30%.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un minorista espera picos de 40 peticiones por segundo durante las rebajas, frente a 2 por segundo el resto del año. ¿Qué implica este requisito para la arquitectura?",
+   "options": [
+    "Nada especial: la API escala automáticamente sin límites por organización, así que basta con el mismo cliente síncrono",
+    "Comprobar los rate limits de la organización para ese pico y diseñar colas, reintentos con backoff y degradación controlada",
+    "Pedir a los usuarios en el system prompt que repartan sus consultas a lo largo del día durante las semanas de rebajas",
+    "Pasar todo el tráfico a la Batches API durante las rebajas, porque admite más volumen que las llamadas en tiempo real"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "El volumen de pico es un requisito de infraestructura: hay que contrastarlo con los rate limits y tokens por minuto de la organización y preparar colas, reintentos con backoff y un comportamiento aceptable si se satura. La Batches API no sirve para tráfico interactivo.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un asistente de voz debe empezar a hablar menos de un segundo después de que el usuario termine su frase. ¿Qué decisión se deriva de este requisito?",
+   "options": [
+    "Usar la Batches API para procesar las frases en lote y reducir así el coste por cada petición de voz",
+    "Activar extended thinking con un presupuesto alto para que la primera frase de la respuesta sea más precisa",
+    "Usar streaming, medir el tiempo hasta el primer token y elegir un modelo y un prompt que cumplan ese objetivo",
+    "Esperar a tener la respuesta completa y enviarla de una vez al motor de voz para que no haya cortes en el audio"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "Lo que importa es el tiempo hasta el primer token: streaming, un modelo rápido y un prompt corto, medidos con datos reales. La Batches API es asíncrona y el thinking alto o esperar la respuesta completa añaden latencia.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Producto pide a la vez la máxima calidad posible, el coste más bajo y respuestas instantáneas. ¿Cómo debe proceder el desarrollador?",
+   "options": [
+    "Elegir el modelo más pequeño y compensar la calidad añadiendo más instrucciones en el system prompt",
+    "Elegir el modelo más grande, porque la calidad es lo único que el usuario final percibe de verdad",
+    "Aceptar los tres requisitos tal cual y ajustar el sistema en producción según las quejas que lleguen",
+    "Hacer explícitos los compromisos entre los tres, acordar prioridades y umbrales y comprobarlos con evals"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "Calidad, coste y latencia compiten entre sí. El trabajo de requisitos es poner los compromisos sobre la mesa, acordar qué pesa más y con qué umbral mínimo, y medir las opciones con evals en lugar de decidir por intuición.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Por normativa, cada respuesta que el asistente da a un cliente debe poder reconstruirse en una auditoría. ¿Qué requisito de infraestructura se deriva?",
+   "options": [
+    "Registrar de forma segura el prompt completo, las versiones de prompt y modelo y la respuesta, con retención y accesos",
+    "Fijar temperature a 0 en todas las peticiones para poder regenerar después cualquier respuesta exactamente igual",
+    "Pedir a Claude que incluya al final de cada respuesta un resumen de cómo ha llegado a ella para guardarlo con el ticket",
+    "Guardar solo las respuestas marcadas como incorrectas por los clientes, para reducir el volumen de almacenamiento"
+   ],
+   "correct": [
+    0
+   ],
+   "explanation": "Para reconstruir una respuesta hace falta lo que recibió y devolvió el modelo y con qué versión de prompt y modelo, guardado con retención y accesos controlados. Regenerar no reproduce la salida, y un resumen del propio modelo no es un registro fiable.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un asistente interno debe consultar y actualizar oportunidades en el CRM de la empresa. ¿Qué DOS preguntas de requisitos hay que resolver antes de diseñar las tools? (Elige 2)",
+   "options": [
+    "Qué operaciones necesita realmente (leer, crear, modificar) y con qué permisos según el usuario que lo usa",
+    "Cómo se autentica la integración contra la API del CRM y qué límites de uso o latencia tiene esa API",
+    "Qué color y tipografía tendrá el panel del asistente dentro de la interfaz web del CRM corporativo",
+    "Si el modelo puede aprenderse de memoria las oportunidades abiertas para no consultar el CRM",
+    "Cuántos ejemplos few-shot caben en el system prompt antes de cada llamada a la API del CRM"
+   ],
+   "correct": [
+    0,
+    1
+   ],
+   "explanation": "El alcance de las operaciones y los permisos definen las tools y su mínimo privilegio; la autenticación, los límites y la latencia de la API del CRM son requisitos de integración. El diseño visual no condiciona la arquitectura y el modelo no memoriza datos de negocio.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Los empleados acceden a una aplicación web interna con el inicio de sesión único (SSO) de la empresa, y la aplicación llamará a Claude. ¿Qué requisito de arquitectura se deduce?",
+   "options": [
+    "Repartir una API key a cada empleado para que el navegador llame a la API con su propia key personal",
+    "Incluir la API key de la organización en el código del frontend, ofuscada para que no se pueda leer",
+    "Que un backend autenticado con el SSO llame a la API con una key guardada en un gestor de secretos",
+    "Pedir a cada empleado que pegue la API key en la aplicación al empezar cada sesión de trabajo"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "La identidad del usuario la resuelve el SSO en el backend, que es el único que conoce la API key, guardada en un gestor de secretos. Una key en el navegador, ofuscada o no, queda expuesta, y repartir keys personales complica la rotación y el control.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un contrato de servicio exige que la aplicación siga atendiendo aunque la API devuelva errores de sobrecarga durante unos minutos. ¿Qué requisito de diseño se deriva?",
+   "options": [
+    "Ninguno, porque la API garantiza que nunca devuelve errores de sobrecarga a las organizaciones con contrato",
+    "Reintentar cada petición en bucle sin espera hasta que la API vuelva a responder con normalidad",
+    "Prever reintentos con backoff, un modelo o ruta alternativa y una respuesta degradada clara para el usuario",
+    "Mostrar el error técnico completo al usuario para que decida él mismo cuándo volver a intentarlo"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "Un requisito de disponibilidad obliga a diseñar para los fallos transitorios (529, 429, timeouts): backoff con jitter, alternativa cuando procede y una degradación comprensible. Reintentar sin espera agrava la sobrecarga.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un cliente quiere que Claude calcule el importe exacto de cada factura a partir de las líneas extraídas de un PDF. ¿Qué reparto de responsabilidades cumple mejor el requisito?",
+   "options": [
+    "Claude extrae las líneas en un formato estructurado y el código calcula los importes de forma determinista",
+    "Claude extrae las líneas y calcula el total en la misma respuesta, revisando las operaciones dos veces",
+    "Claude calcula el total con extended thinking para que el razonamiento matemático sea siempre exacto",
+    "Claude devuelve el total y un empleado revisa a mano todas las facturas antes de darlas por buenas"
+   ],
+   "correct": [
+    0
+   ],
+   "explanation": "Un requisito de exactitud aritmética se cumple con código determinista. El modelo aporta lo que el código no hace bien: leer el documento y estructurar los datos. Pedirle que repase o razone más reduce errores, pero no los elimina.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "A mitad del proyecto, un stakeholder pide que el asistente también redacte contratos, algo que no estaba en el alcance. ¿Qué es lo correcto?",
+   "options": [
+    "Añadirlo al system prompt actual sin más, porque el modelo ya sabe redactar textos de cualquier tipo y tono",
+    "Rechazarlo sin más, porque el alcance acordado al principio no se puede modificar durante el proyecto",
+    "Tratarlo como cambio de alcance: valorar su impacto y, si se aprueba, darle criterios y evals propios",
+    "Implementarlo en una rama aparte y desplegarlo cuando el stakeholder lo pruebe y diga que le gusta"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "Un cambio de alcance se gestiona: se documenta, se valora su impacto (riesgo legal, datos, coste, plazos) y, si se aprueba, recibe sus propios criterios de aceptación y casos de prueba como cualquier otro requisito.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Un equipo quiere definir criterios de aceptación para un clasificador de reclamaciones, pero no tiene ningún ejemplo etiquetado. ¿Qué debe incluir la fase de requisitos?",
+   "options": [
+    "Usar como referencia las etiquetas que genere Claude con el primer prompt y medir las versiones siguientes contra ellas",
+    "Saltarse los criterios de aceptación hasta que haya usuarios reales y medir la satisfacción con encuestas",
+    "Obtener con los expertos del negocio un conjunto representativo de casos reales etiquetados, incluidos los difíciles",
+    "Pedir a Claude que invente 1.000 reclamaciones de ejemplo y aceptar el clasificador si las clasifica bien"
+   ],
+   "correct": [
+    2
+   ],
+   "explanation": "Los criterios de aceptación necesitan una referencia fiable: casos reales etiquetados por quien conoce el negocio, incluidos los ambiguos. Medir contra las salidas del propio modelo o contra datos inventados por él no dice si el sistema cumple.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "Una normativa exige que ninguna denegación de crédito se comunique sin que la revise una persona. ¿Cómo se refleja en la arquitectura de la solución con Claude?",
+   "options": [
+    "Indicar en el system prompt que el modelo sea especialmente prudente antes de denegar un crédito a un cliente",
+    "Claude propone la decisión con su justificación y el sistema la retiene hasta que una persona la aprueba",
+    "Dejar que Claude decida y revisar cada mes una muestra aleatoria de las denegaciones que ya se comunicaron",
+    "Usar el modelo más grande disponible, porque su tasa de error es lo bastante baja para no necesitar revisión"
+   ],
+   "correct": [
+    1
+   ],
+   "explanation": "Un requisito normativo de revisión humana se impone en el flujo, no en el prompt: el sistema bloquea el envío hasta la aprobación. Una auditoría posterior o un modelo mejor no cumplen la obligación de revisar antes de comunicar.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "El presupuesto del proyecto es de 3.000 euros al mes y se esperan unas 400.000 peticiones mensuales. ¿Qué paso convierte este dato en un requisito verificable?",
+   "options": [
+    "Medir tokens con una muestra real, calcular el coste por petición y probar palancas como caché o Batches",
+    "Elegir el modelo más barato y asumir que cualquier volumen de peticiones quedará dentro del presupuesto mensual",
+    "Limitar max_tokens a 100 en todas las peticiones para garantizar que el coste nunca supere el presupuesto",
+    "Esperar a la primera factura mensual y ajustar el diseño si el gasto real supera los 3.000 euros"
+   ],
+   "correct": [
+    0
+   ],
+   "explanation": "El presupuesto da un coste máximo por petición (unos 0,0075 euros aquí). Con tokens medidos en una muestra real se comprueba qué modelo y qué palancas (caché de prompt, Batches, salida más corta) lo cumplen antes de desplegar.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "El negocio quiere \"un resumen de la actividad comercial del día anterior para los directivos, disponible a primera hora\". ¿Qué arquitectura encaja mejor con este requisito?",
+   "options": [
+    "Un chat en tiempo real donde cada directivo pide su resumen cuando llega por la mañana a la oficina",
+    "Un agente autónomo que monitoriza el CRM de forma continua y envía un resumen cada vez que detecta un cambio",
+    "Una petición en streaming por directivo que se lanza en cuanto el directivo abre el correo por la mañana",
+    "Un proceso nocturno programado, por ejemplo con la Batches API, que deja los resúmenes listos antes de la mañana"
+   ],
+   "correct": [
+    3
+   ],
+   "explanation": "El requisito no es interactivo y tiene una hora límite clara: un proceso programado asíncrono cumple el plazo con menor coste. El chat o el streaming bajo demanda añaden espera y coste, y un agente continuo es más complejo de lo necesario.",
+   "source": "bank"
+  },
+  {
+   "domain": "D2",
+   "stem": "¿Qué DOS de estos son requisitos de infraestructura, y no requisitos funcionales del comportamiento del asistente? (Elige 2)",
+   "options": [
+    "Ejecutarse en la cuenta de AWS de la empresa, con la facturación que ya tiene contratada",
+    "Guardar las credenciales en el gestor de secretos corporativo y rotarlas cada 90 días",
+    "Responder siempre en el mismo idioma en el que escribe el usuario del asistente",
+    "Derivar la conversación a una persona cuando el cliente pida hablar con un agente",
+    "Resumir el historial del cliente antes de proponer una solución a su consulta"
+   ],
+   "correct": [
+    0,
+    1
+   ],
+   "explanation": "Dónde se ejecuta y se factura la solución y cómo se gestionan los secretos son requisitos de infraestructura. El idioma de respuesta, la derivación a una persona y resumir el historial describen el comportamiento del asistente: son requisitos funcionales.",
+   "source": "bank"
   }
  ]
 }
