@@ -61,8 +61,15 @@ export default function Runner() {
 
   const toggle = (k: number) => {
     if (locked) return;
-    if (multi) setItem({ pick: it.pick.includes(k) ? it.pick.filter((x) => x !== k) : [...it.pick, k] });
-    else setItem({ pick: [k] });
+    const struck = (it.struck || []).filter((x) => x !== k);
+    if (multi) setItem({ struck, pick: it.pick.includes(k) ? it.pick.filter((x) => x !== k) : [...it.pick, k] });
+    else setItem({ struck, pick: [k] });
+  };
+  const strike = (k: number) => {
+    if (locked) return;
+    const struck = it.struck || [];
+    if (struck.includes(k)) setItem({ struck: struck.filter((x) => x !== k) });
+    else setItem({ struck: [...struck, k], pick: it.pick.filter((x) => x !== k) });
   };
 
   return (
@@ -89,15 +96,23 @@ export default function Runner() {
             {t.missing && <span className="tag">{L.missing}</span>}
           </div>
           <p className="qtext">{t.stem}</p>
+          {!locked && <p className="note" style={{ margin: '0 0 8px' }}>{L.strikeHint}</p>}
           <div className="opts" role={multi ? 'group' : 'radiogroup'}>
             {it.order.map((oi, k) => {
               const sel = it.pick.includes(k);
+              const struck = !!it.struck?.includes(k);
               let cls = sel ? 'sel' : '';
               if (locked) { if (it.correct.includes(k)) cls = 'right'; else if (sel) cls = 'wrong'; }
               return (
-                <label key={k} className={`opt ${cls}`}>
+                <label key={k} className={`opt ${cls} ${struck ? 'struck' : ''}`}
+                  onContextMenu={(e) => { e.preventDefault(); strike(k); }}>
                   <input type={multi ? 'checkbox' : 'radio'} name="opt" checked={sel} disabled={locked} onChange={() => toggle(k)} />
-                  <span className="key">{LETTERS[k]}</span><span>{t.options[oi]}</span>
+                  <span className="key">{LETTERS[k]}</span><span className="otext">{t.options[oi]}</span>
+                  <button type="button" className="strikebtn" disabled={locked} aria-pressed={struck}
+                    title={struck ? L.unstrike : L.strike} aria-label={`${struck ? L.unstrike : L.strike} ${LETTERS[k]}`}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); strike(k); }}>
+                    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10h12M7 5.5c.6-1 1.7-1.5 3-1.5 2 0 3.2 1 3.2 2.3M13 14.2c-.5 1.1-1.7 1.8-3.2 1.8-1.9 0-3.1-.9-3.3-2.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                  </button>
                 </label>
               );
             })}

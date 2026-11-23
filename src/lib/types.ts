@@ -68,6 +68,7 @@ export type Item = {
   pick: number[]; // display indexes picked
   flag: boolean;
   checked: boolean; // practice: answer revealed
+  struck?: number[]; // display indexes crossed out by the user
 };
 
 export type Session = {

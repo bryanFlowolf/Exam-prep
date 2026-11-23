@@ -39,6 +39,6 @@ export function qText(q: Question, lang: Lang, base = 'es'): QText {
 
 /** The few labels that sit inside a question card, so a question read in English stays in English. */
 export const QL = {
-  es: { correct: 'Correcto.', incorrect: 'Incorrecto.', answer: 'Respuesta', choose: (n: number) => `Elige ${n}`, yourAnswer: 'Tu respuesta', missing: 'Sin traducción: se muestra en español' },
-  en: { correct: 'Correct.', incorrect: 'Incorrect.', answer: 'Answer', choose: (n: number) => `Choose ${n}`, yourAnswer: 'Your answer', missing: 'No English version yet: shown in Spanish' },
+  es: { correct: 'Correcto.', incorrect: 'Incorrecto.', answer: 'Respuesta', choose: (n: number) => `Elige ${n}`, yourAnswer: 'Tu respuesta', missing: 'Sin traducción: se muestra en español', strike: 'Descartar', unstrike: 'Recuperar', strikeHint: 'Puedes descartar una opción con el botón de su derecha o con clic derecho: queda tachada en gris.' },
+  en: { correct: 'Correct.', incorrect: 'Incorrect.', answer: 'Answer', choose: (n: number) => `Choose ${n}`, yourAnswer: 'Your answer', missing: 'No English version yet: shown in Spanish', strike: 'Strike out', unstrike: 'Restore', strikeHint: 'Strike out an option with the button on its right or a right-click: it is crossed out and greyed.' },
 } as const;
