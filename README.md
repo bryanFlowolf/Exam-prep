@@ -93,6 +93,7 @@ Crea un JSON con este formato (ver `content/exams/anthropic-ccdv-f.json`) y súb
 }
 ```
 
+- `i18n` (opcional) guarda otras versiones de cada pregunta, por ejemplo `"i18n": {"en": {"stem": "…", "options": ["…"], "explanation": "…"}}`. Las opciones traducidas van en el mismo orden que las originales. El selector ES/EN de la barra superior elige el idioma; si una pregunta no tiene traducción, se muestra en su idioma original con un aviso.
 - `correct` usa índices desde 0; con varios índices la pregunta es de respuesta múltiple. Entre 2 y 6 opciones, y al menos una incorrecta.
 - `source: "official_sample"` marca una pregunta de ejemplo publicada en la guía oficial.
 - Si el `slug` ya existe, se actualiza el examen y se sustituyen sus preguntas del banco; las del equipo se conservan.

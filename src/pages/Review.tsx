@@ -4,12 +4,14 @@ import { useApp } from '../App';
 import { useExam } from '../lib/useExam';
 import { LETTERS, fmtDate, shuffle, toItem } from '../lib/exam';
 import { removeReview } from '../lib/data';
+import { QL, qText } from '../lib/lang';
 
 type Filter = 'all' | 'wrong' | 'flag';
 
 export default function Review() {
   const { slug = '' } = useParams();
-  const { userId, setSession } = useApp();
+  const { userId, setSession, lang } = useApp();
+  const L = QL[lang];
   const { data, error, update } = useExam(slug, userId);
   const nav = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
@@ -59,7 +61,7 @@ export default function Review() {
         ))}
       </div>
       <section className="list">
-        {entries.map(({ q, r }) => (
+        {entries.map(({ q, r }) => { const t = qText(q, lang); return (
           <article key={q.id} className={`ritem ${r.wrong_count ? 'bad' : r.flagged ? 'flagged' : ''}`}>
             <div className="qhead">
               <span className="tag">{domains[q.domain_id]?.code} · {domains[q.domain_id]?.name}</span>
@@ -67,17 +69,18 @@ export default function Review() {
               {r.flagged && <span className="tag multi">Marcada</span>}
               <span className="tag">Última vez: {r.last_result} · {fmtDate(r.last_at)}</span>
             </div>
-            <p className="qtext">{q.stem}</p>
-            <ul>{q.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
+            {t.missing && <div className="qhead"><span className="tag">{L.missing}</span></div>}
+            <p className="qtext">{t.stem}</p>
+            <ul>{t.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
             {r.last_result === 'fallada' && r.last_pick.length > 0 && (
-              <p style={{ fontSize: 13.5, margin: '8px 0 0', color: 'var(--bad)' }}>Tu respuesta: {r.last_pick.map((i) => q.options[i]).filter(Boolean).join(' / ')}</p>
+              <p style={{ fontSize: 13.5, margin: '8px 0 0', color: 'var(--bad)' }}>{L.yourAnswer}: {r.last_pick.map((i) => t.options[i]).filter(Boolean).join(' / ')}</p>
             )}
-            {q.explanation && <div className="expl">{q.explanation}</div>}
+            {t.explanation && <div className="expl">{t.explanation}</div>}
             <div className="row" style={{ marginTop: 10 }}>
               <button className={`btn small ${armed === q.id ? 'solid' : ''}`} onClick={() => remove(q.id)}>{armed === q.id ? 'Confirmar: quitar' : 'Quitar de la lista'}</button>
             </div>
           </article>
-        ))}
+        ); })}
         {!entries.length && <p className="note">No hay preguntas en este filtro. Las que falles o marques en cualquier modo aparecerán aquí.</p>}
       </section>
     </main>

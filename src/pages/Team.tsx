@@ -5,6 +5,7 @@ import { useExam } from '../lib/useExam';
 import { LETTERS, fmtDate } from '../lib/exam';
 import { deleteQuestion, saveTeamQuestion } from '../lib/data';
 import type { Question } from '../lib/types';
+import { QL, qText } from '../lib/lang';
 
 type Draft = { domain_id: string; stem: string; options: string[]; correct: boolean[]; explanation: string; ok: boolean };
 
@@ -12,7 +13,7 @@ const empty = (domainId: string): Draft => ({ domain_id: domainId, stem: '', opt
 
 export default function Team() {
   const { slug = '' } = useParams();
-  const { userId, profile } = useApp();
+  const { userId, profile, lang } = useApp();
   const { data, error, update } = useExam(slug, userId);
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<string | null>(null);
@@ -116,17 +117,19 @@ export default function Team() {
       <section className="list">
         {list.map((q) => {
           const mine = q.author_id === userId;
+          const t = qText(q, lang);
           return (
             <article key={q.id} className="ritem team">
               <div className="qhead">
                 <span className="tag">{domains[q.domain_id]?.code} · {domains[q.domain_id]?.name}</span>
                 <span className="tag">{author(q)}</span>
-                {q.correct.length > 1 && <span className="tag multi">Elige {q.correct.length}</span>}
+                {q.correct.length > 1 && <span className="tag multi">{QL[lang].choose(q.correct.length)}</span>}
+                {t.missing && <span className="tag">{QL[lang].missing}</span>}
                 <span className="tag">{fmtDate(q.created_at)}</span>
               </div>
-              <p className="qtext">{q.stem}</p>
-              <ul>{q.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
-              {q.explanation && <div className="expl">{q.explanation}</div>}
+              <p className="qtext">{t.stem}</p>
+              <ul>{t.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
+              {t.explanation && <div className="expl">{t.explanation}</div>}
               {(mine || profile?.is_admin) && (
                 <div className="row" style={{ marginTop: 10 }}>
                   {mine && <button className="btn small" onClick={() => startEdit(q)}>Editar</button>}

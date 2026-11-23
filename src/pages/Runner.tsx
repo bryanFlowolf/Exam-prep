@@ -5,10 +5,12 @@ import { useExam } from '../lib/useExam';
 import { LETTERS, answered, clock, isRight } from '../lib/exam';
 import { saveAttempt } from '../lib/data';
 import type { Domain, Item } from '../lib/types';
+import { QL, qText } from '../lib/lang';
 
 export default function Runner() {
   const { slug = '' } = useParams();
-  const { userId, session, setSession } = useApp();
+  const { userId, session, setSession, lang } = useApp();
+  const L = QL[lang];
   const { data, update } = useExam(slug, userId);
   const nav = useNavigate();
   const [items, setItems] = useState<Item[]>(() => session?.items || []);
@@ -49,6 +51,7 @@ export default function Runner() {
   if (done) return <Results items={items} title={session.title} practice={practice} slug={slug} domainsById={domainsById} done={done} onBack={() => { setSession(null); nav(`/e/${slug}`); }} />;
 
   const it = items[i];
+  const t = qText(it.q, lang);
   const multi = it.q.correct.length > 1;
   const locked = practice && it.checked;
   const answeredCount = items.filter((x) => x.pick.length).length;
@@ -82,9 +85,10 @@ export default function Runner() {
             <span className="tag">{domainsById[it.q.domain_id]?.code} · {domainsById[it.q.domain_id]?.name}</span>
             {it.q.source === 'official_sample' && <span className="tag accent">Ejemplo de la guía oficial</span>}
             {author && <span className="tag accent">Pregunta del equipo · {author}</span>}
-            {multi && <span className="tag multi">Elige {it.q.correct.length}</span>}
+            {multi && <span className="tag multi">{L.choose(it.q.correct.length)}</span>}
+            {t.missing && <span className="tag">{L.missing}</span>}
           </div>
-          <p className="qtext">{it.q.stem}</p>
+          <p className="qtext">{t.stem}</p>
           <div className="opts" role={multi ? 'group' : 'radiogroup'}>
             {it.order.map((oi, k) => {
               const sel = it.pick.includes(k);
@@ -93,13 +97,13 @@ export default function Runner() {
               return (
                 <label key={k} className={`opt ${cls}`}>
                   <input type={multi ? 'checkbox' : 'radio'} name="opt" checked={sel} disabled={locked} onChange={() => toggle(k)} />
-                  <span className="key">{LETTERS[k]}</span><span>{it.q.options[oi]}</span>
+                  <span className="key">{LETTERS[k]}</span><span>{t.options[oi]}</span>
                 </label>
               );
             })}
           </div>
           {locked && (
-            <div className="expl"><b>{isRight(it) ? 'Correcto.' : 'Incorrecto.'}</b> Respuesta: {it.correct.map((k) => LETTERS[k]).join(', ')}. {it.q.explanation}</div>
+            <div className="expl"><b>{isRight(it) ? L.correct : L.incorrect}</b> {L.answer}: {it.correct.map((k) => LETTERS[k]).join(', ')}. {t.explanation}</div>
           )}
           <div className="row" style={{ marginTop: 18 }}>
             <button className="btn" disabled={i === 0} onClick={() => { setI(i - 1); setConfirming(false); }}>Anterior</button>
@@ -142,6 +146,7 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
   items: Item[]; title: string; practice: boolean; slug: string; domainsById: Record<string, Domain>;
   done: { secondsUsed: number | null; saveError?: string; saving: boolean }; onBack: () => void;
 }) {
+  const { lang } = useApp();
   const [onlyWrong, setOnlyWrong] = useState(false);
   const graded = practice ? items.filter(answered) : items;
   const ok = graded.filter(isRight).length;
@@ -196,6 +201,7 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
         {list.map((x) => {
           const r = isRight(x);
           const k = graded.indexOf(x);
+          const xt = qText(x.q, lang);
           return (
             <article key={x.q.id} className={`ritem ${r ? '' : 'bad'}`}>
               <div className="qhead">
@@ -204,9 +210,9 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
                 <span className="tag" style={{ color: r ? 'var(--ok)' : 'var(--bad)' }}>{r ? 'Correcta' : x.pick.length ? 'Incorrecta' : 'Sin responder'}</span>
                 {x.flag && <span className="tag multi">Marcada</span>}
               </div>
-              <p className="qtext">{x.q.stem}</p>
-              <ul>{x.order.map((oi, j) => <li key={j} className={x.correct.includes(j) ? 'c' : x.pick.includes(j) ? 'x' : ''}>{LETTERS[j]}. {x.q.options[oi]}</li>)}</ul>
-              {x.q.explanation && <div className="expl">{x.q.explanation}</div>}
+              <p className="qtext">{xt.stem}</p>
+              <ul>{x.order.map((oi, j) => <li key={j} className={x.correct.includes(j) ? 'c' : x.pick.includes(j) ? 'x' : ''}>{LETTERS[j]}. {xt.options[oi]}</li>)}</ul>
+              {xt.explanation && <div className="expl">{xt.explanation}</div>}
             </article>
           );
         })}

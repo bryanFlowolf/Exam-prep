@@ -27,6 +27,8 @@ export type Question = {
   options: string[];
   correct: number[];
   explanation: string;
+  /** Translations by language code, e.g. { en: { stem, options, explanation } }. Options keep the same order. */
+  i18n?: Record<string, { stem: string; options: string[]; explanation?: string }>;
   author_id: string | null;
   created_at: string;
 };

@@ -4,6 +4,7 @@ import type { Session as AuthSession } from '@supabase/supabase-js';
 import { configured, supabase } from './lib/supabase';
 import { getMyProfile } from './lib/data';
 import type { Profile, Session } from './lib/types';
+import { LANGS, loadLang, saveLang, type Lang } from './lib/lang';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import ExamHome from './pages/ExamHome';
@@ -19,6 +20,7 @@ type Ctx = {
   refreshProfile: () => Promise<void>;
   session: Session | null;
   setSession: (s: Session | null) => void;
+  lang: Lang;
 };
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -31,6 +33,8 @@ export default function App() {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [lang, setLangState] = useState<Lang>(loadLang);
+  const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setAuth(data.session));
@@ -53,11 +57,16 @@ export default function App() {
   if (!auth) return <Login />;
 
   return (
-    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession }}>
+    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang }}>
       <header className="topbar">
         <div className="wrap">
           <Link className="brand" to="/"><i aria-hidden="true" />Exam Prep</Link>
           <span className="spacer" />
+          <div className="langsel" role="group" aria-label="Idioma de las preguntas / Question language">
+            {LANGS.map((l) => (
+              <button key={l.code} type="button" aria-pressed={lang === l.code} title={l.name} onClick={() => setLang(l.code)}>{l.label}</button>
+            ))}
+          </div>
           {profile?.is_admin && <Link className="btn small" to="/admin">Administración</Link>}
           <Link className="btn small" to="/cuenta">{profile?.display_name || 'Mi cuenta'}</Link>
         </div>

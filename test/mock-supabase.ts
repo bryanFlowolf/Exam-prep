@@ -27,7 +27,7 @@ function importExam(p: any) {
   p.questions.forEach((q: any, i: number) => db.questions.push({
     id: uuid(), exam_id: e!.id, domain_id: db.domains.find((x) => x.exam_id === e!.id && x.code === q.domain)!.id,
     source: q.source === 'official_sample' ? 'official_sample' : 'bank', stem: q.stem, options: q.options, correct: q.correct,
-    explanation: q.explanation || '', author_id: null, is_active: true, created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+    explanation: q.explanation || '', i18n: q.i18n || {}, author_id: null, is_active: true, created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
   }));
   return { exam_id: e.id, questions: p.questions.length };
 }
