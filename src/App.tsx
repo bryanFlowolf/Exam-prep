@@ -60,7 +60,7 @@ export default function App() {
     <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang }}>
       <header className="topbar">
         <div className="wrap">
-          <Link className="brand" to="/"><i aria-hidden="true" />Exam Prep</Link>
+          <Link className="brand" to="/"><img src="/logo.png" alt="" width="30" height="30" />Exam Prep</Link>
           <span className="spacer" />
           <div className="langsel" role="group" aria-label="Idioma de las preguntas / Question language">
             {LANGS.map((l) => (

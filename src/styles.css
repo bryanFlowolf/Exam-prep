@@ -44,7 +44,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .topbar .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px; flex-wrap: wrap; }
 .brand { font-family: var(--f-display); font-weight: 700; font-size: 18px; text-decoration: none; color: var(--ink); display: flex; align-items: center; gap: 8px; }
-.brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: inline-block; }
+.brand img { width: 30px; height: 30px; border-radius: 8px; display: block; }
 .crumbs { color: var(--muted); font-size: 14px; }
 .crumbs a { color: var(--muted); }
 
