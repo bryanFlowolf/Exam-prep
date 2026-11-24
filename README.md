@@ -14,6 +14,10 @@ Aplicación para preparar certificaciones: simulacros con el reparto oficial por
 | Preguntas del equipo | Todos; cada autor edita y borra las suyas; los administradores moderan |
 | Intentos y notas, preguntas vistas, lista de repaso | **Solo su dueño.** Ni los administradores pueden leerlos (políticas RLS en `supabase/migrations`) |
 | Nombre visible | Todos (aparece junto a las preguntas del equipo) |
+| Fecha prevista de examen | Solo su dueño (y los responsables de su equipo si comparte su progreso) |
+| Estadísticas por pregunta (veces respondida, % de acierto, opciones elegidas) | Todos. Son **anónimas**: la tabla no guarda quién respondió |
+| Reportes de preguntas | Quien lo envía y los administradores (que ven su nombre) |
+| Progreso compartido con un equipo | Solo los **responsables** de ese equipo, y solo de los miembros que activan "compartir mi progreso" en *Mis equipos*. Es un resumen por examen (nota estimada, probabilidad, respuestas, última actividad, último simulacro, fecha de examen), nunca preguntas ni respuestas. Ser administrador no da acceso |
 
 Los emails solo están en el sistema de autenticación de Supabase, no en las tablas de la aplicación.
 
@@ -26,6 +30,8 @@ Los emails solo están en el sistema de autenticación de Supabase, no en las ta
    - `supabase/migrations/20261119000000_init.sql` (tablas y reglas de privacidad);
    - `supabase/migrations/20261119000100_grants.sql` (permisos de tabla; los proyectos nuevos de Supabase no los conceden solos).
    - `supabase/migrations/20261119000200_keepalive.sql` (función mínima para evitar la pausa por inactividad del plan gratuito).
+   - `supabase/migrations/20261123000000_i18n.sql` (traducciones de las preguntas).
+   - `supabase/migrations/20261124000000_insights.sql` (panel de preparación, reportes y estadísticas de preguntas, equipos y enlaces de documentación).
 3. En **SQL Editor**, ejecuta `supabase/seed.sql` para cargar el examen CCDV-F.
 4. En **Authentication → URL Configuration**:
    - **Site URL:** la URL de Vercel (por ejemplo `https://exam-prep.vercel.app`).
@@ -101,6 +107,15 @@ Crea un JSON con este formato (ver `content/exams/anthropic-ccdv-f.json`) y súb
 
 **Contenido permitido:** solo preguntas propias o con permiso de su autor. No uses preguntas de exámenes reales ni de bancos de terceros ("brain dumps"): los acuerdos de confidencialidad de Anthropic, Salesforce, Appian y la mayoría de fabricantes lo prohíben y pueden retirar la certificación.
 
+## Preparación, calidad y equipos
+
+- **Panel de preparación** (página de cada examen): nota estimada ponderada por el peso oficial de cada dominio, probabilidad de aprobar frente al corte del examen, evolución de los simulacros y fecha prevista del examen. Usa los últimos 20 simulacros, mini-exámenes y prácticas; los dominios con pocas respuestas cuentan como un 50 % hasta tener datos. La lógica está en `src/lib/readiness.ts` y la vista de equipos usa la misma.
+- **Práctica dirigida:** 20 preguntas de los dos dominios donde más puntos puedes ganar (distancia al objetivo × peso), empezando por las que fallaste.
+- **Reportar pregunta:** en el examen, los resultados y la lista de repaso. Los administradores los resuelven en *Administración → Calidad del banco*, donde también ven qué preguntas casi nadie acierta y qué distractor se elige más.
+- **Equipos:** los administradores los crean en *Administración → Equipos* y nombran responsables; cada miembro decide en *Mis equipos* si comparte su progreso.
+- **Para saber más:** cada dominio tiene enlaces a la documentación oficial (campo `docs` de cada dominio en `content/exams/*.json`; para un proyecto ya desplegado, `supabase/content-updates/20261124_enlaces_documentacion.sql`).
+- **Móvil:** en pantallas pequeñas los botones del examen quedan fijos abajo, la navegación se pliega y se puede deslizar a izquierda o derecha para cambiar de pregunta. La app se puede instalar en la pantalla de inicio (`public/manifest.webmanifest`).
+
 ## Desarrollo
 
 ```bash
@@ -115,5 +130,7 @@ npm run dev
   ```bash
   psql -d prueba -f supabase/tests/mock_supabase.sql -f supabase/migrations/20261119000000_init.sql -f supabase/migrations/20261119000100_grants.sql -f supabase/seed.sql
   psql -d prueba -f supabase/tests/rls_test.sql   # todas las líneas deben decir OK
+  psql -d prueba -f supabase/migrations/20261123000000_i18n.sql -f supabase/migrations/20261124000000_insights.sql
+  psql -d prueba -f supabase/tests/insights_test.sql   # reportes, estadísticas anónimas y privacidad de los equipos
   ```
 - **Interfaz sin backend:** `npx vite --config test/vite.mock.config.ts` arranca la app con un Supabase simulado en memoria.

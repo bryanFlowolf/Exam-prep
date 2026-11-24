@@ -18,37 +18,131 @@
   {
    "code": "D1",
    "name": "Introduction to the Appian platform",
-   "weight": 14
+   "weight": 14,
+   "docs": [
+    {
+     "title": "Appian Designer",
+     "url": "https://docs.appian.com/suite/help/latest/welcome-app-designer.html"
+    },
+    {
+     "title": "Application building tutorial",
+     "url": "https://docs.appian.com/suite/help/latest/Application_Building_Tutorial.html"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "General Appian principles",
-   "weight": 9
+   "weight": 9,
+   "docs": [
+    {
+     "title": "Object security",
+     "url": "https://docs.appian.com/suite/help/latest/object-security.html"
+    },
+    {
+     "title": "Appian design guidance",
+     "url": "https://docs.appian.com/suite/help/latest/appian-recommendations.html"
+    },
+    {
+     "title": "Recommended object names",
+     "url": "https://docs.appian.com/suite/help/latest/Standard_Object_Names.html"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Data persistence",
-   "weight": 13
+   "weight": 13,
+   "docs": [
+    {
+     "title": "Custom data types",
+     "url": "https://docs.appian.com/suite/help/latest/Custom_Data_Types.html"
+    },
+    {
+     "title": "Data stores",
+     "url": "https://docs.appian.com/suite/help/latest/Data_Stores.html"
+    },
+    {
+     "title": "CDT design guidance",
+     "url": "https://docs.appian.com/suite/help/latest/cdt_design_guidance.html"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Appian development: Process models",
-   "weight": 17
+   "weight": 17,
+   "docs": [
+    {
+     "title": "Process model object",
+     "url": "https://docs.appian.com/suite/help/latest/process-model-object.html"
+    },
+    {
+     "title": "Configuring the user input task",
+     "url": "https://docs.appian.com/suite/help/latest/Configuring_the_User_Input_Task.html"
+    },
+    {
+     "title": "Process model recipes",
+     "url": "https://docs.appian.com/suite/help/latest/Process_Model_Recipes.html"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Appian development: Interface design",
-   "weight": 19
+   "weight": 19,
+   "docs": [
+    {
+     "title": "Interface object",
+     "url": "https://docs.appian.com/suite/help/latest/interface_object.html"
+    },
+    {
+     "title": "Local variables",
+     "url": "https://docs.appian.com/suite/help/latest/Local_Variables.html"
+    },
+    {
+     "title": "Interface recipes",
+     "url": "https://docs.appian.com/suite/help/latest/SAIL_Recipes.html"
+    }
+   ]
   },
   {
    "code": "D6",
    "name": "Appian development: Records",
-   "weight": 13
+   "weight": 13,
+   "docs": [
+    {
+     "title": "About record types",
+     "url": "https://docs.appian.com/suite/help/latest/Record_Type_Object.html"
+    },
+    {
+     "title": "Record type relationships",
+     "url": "https://docs.appian.com/suite/help/latest/record-type-relationships.html"
+    },
+    {
+     "title": "Record actions",
+     "url": "https://docs.appian.com/suite/help/latest/record-actions.html"
+    }
+   ]
   },
   {
    "code": "D7",
    "name": "Appian development: Expression rules",
-   "weight": 15
+   "weight": 15,
+   "docs": [
+    {
+     "title": "Expression rules",
+     "url": "https://docs.appian.com/suite/help/latest/Expression_Rules.html"
+    },
+    {
+     "title": "Expressions",
+     "url": "https://docs.appian.com/suite/help/latest/Expressions.html"
+    },
+    {
+     "title": "Appian functions",
+     "url": "https://docs.appian.com/suite/help/latest/Appian_Functions.html"
+    }
+   ]
   }
  ],
  "questions": [

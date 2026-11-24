@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { updateDisplayName } from '../lib/data';
 import { supabase } from '../lib/supabase';
 
 export default function Account() {
-  const { profile, refreshProfile } = useApp();
+  const { profile, refreshProfile, teamCount } = useApp();
   const [name, setName] = useState(profile?.display_name || '');
   const [email, setEmail] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -33,6 +34,16 @@ export default function Account() {
           <button className="btn" onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
         </div>
       </section>
+      {(teamCount > 0 || profile?.is_admin) && (
+        <section className="panel">
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Accesos</div>
+          <div className="row">
+            {(teamCount > 0 || profile?.is_admin) && <Link className="btn" to="/equipos">Mis equipos</Link>}
+            {profile?.is_admin && <Link className="btn" to="/admin">Administración</Link>}
+          </div>
+          <p className="note" style={{ marginTop: 8 }}>En Mis equipos decides si compartes tu progreso con los responsables de cada equipo.</p>
+        </section>
+      )}
     </main>
   );
 }

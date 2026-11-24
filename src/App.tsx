@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import type { Session as AuthSession } from '@supabase/supabase-js';
 import { configured, supabase } from './lib/supabase';
-import { getMyProfile } from './lib/data';
+import { getMyProfile, myTeamCount } from './lib/data';
 import type { Profile, Session } from './lib/types';
 import { LANGS, loadLang, saveLang, type Lang } from './lib/lang';
 import Login from './pages/Login';
@@ -13,6 +13,9 @@ import Review from './pages/Review';
 import Team from './pages/Team';
 import Admin from './pages/Admin';
 import Account from './pages/Account';
+import AdminQuality from './pages/AdminQuality';
+import AdminTeams from './pages/AdminTeams';
+import Teams from './pages/Teams';
 
 type Ctx = {
   userId: string;
@@ -21,6 +24,7 @@ type Ctx = {
   session: Session | null;
   setSession: (s: Session | null) => void;
   lang: Lang;
+  teamCount: number;
 };
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -34,6 +38,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [lang, setLangState] = useState<Lang>(loadLang);
+  const [teamCount, setTeamCount] = useState(0);
   const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
 
   useEffect(() => {
@@ -43,7 +48,9 @@ export default function App() {
   }, []);
 
   const refreshProfile = async () => { try { setProfile(await getMyProfile()); } catch { setProfile(null); } };
-  useEffect(() => { if (auth) refreshProfile(); else setProfile(null); }, [auth?.user.id]);
+  useEffect(() => {
+    if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); } else { setProfile(null); setTeamCount(0); }
+  }, [auth?.user.id]);
 
   if (!configured) {
     return (
@@ -57,7 +64,7 @@ export default function App() {
   if (!auth) return <Login />;
 
   return (
-    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang }}>
+    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount }}>
       <header className="topbar">
         <div className="wrap">
           <Link className="brand" to="/"><i className="logo" aria-hidden="true" />Exam Prep</Link>
@@ -67,7 +74,8 @@ export default function App() {
               <button key={l.code} type="button" aria-pressed={lang === l.code} title={l.name} onClick={() => setLang(l.code)}>{l.label}</button>
             ))}
           </div>
-          {profile?.is_admin && <Link className="btn small" to="/admin">Administración</Link>}
+          {(teamCount > 0 || profile?.is_admin) && <Link className="btn small hide-sm" to="/equipos">Equipos</Link>}
+          {profile?.is_admin && <Link className="btn small hide-sm" to="/admin">Administración</Link>}
           <Link className="btn small" to="/cuenta">{profile?.display_name || 'Mi cuenta'}</Link>
         </div>
       </header>
@@ -78,6 +86,9 @@ export default function App() {
         <Route path="/e/:slug/repaso" element={<Review />} />
         <Route path="/e/:slug/equipo" element={<Team />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/calidad" element={<AdminQuality />} />
+        <Route path="/admin/equipos" element={<AdminTeams />} />
+        <Route path="/equipos" element={<Teams />} />
         <Route path="/cuenta" element={<Account />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

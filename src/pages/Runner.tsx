@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMedia } from '../lib/useMedia';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../App';
 import { useExam } from '../lib/useExam';
@@ -6,6 +7,7 @@ import { LETTERS, answered, clock, isRight } from '../lib/exam';
 import { saveAttempt } from '../lib/data';
 import type { Domain, Item } from '../lib/types';
 import { QL, qText } from '../lib/lang';
+import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 
 export default function Runner() {
   const { slug = '' } = useParams();
@@ -20,6 +22,8 @@ export default function Runner() {
   const [quitArmed, setQuitArmed] = useState(false);
   const [done, setDone] = useState<null | { secondsUsed: number | null; saveError?: string; saving: boolean }>(null);
   const finishing = useRef(false);
+  const narrow = useMedia('(max-width: 820px)');
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const practice = session ? !['sim', 'mini'].includes(session.mode) : false;
 
   const domainsById = useMemo(() => Object.fromEntries((data?.domains || []).map((d) => [d.id, d])) as Record<string, Domain>, [data]);
@@ -57,6 +61,7 @@ export default function Runner() {
   const answeredCount = items.filter((x) => x.pick.length).length;
   const flagged = items.filter((x) => x.flag).length;
   const setItem = (patch: Partial<Item>) => setItems((arr) => arr.map((x, k) => (k === i ? { ...x, ...patch } : x)));
+  const markReported = (id: string) => update((d) => ({ ...d, reported: new Set(d.reported).add(id) }));
   const author = it.q.source === 'team' && it.q.author_id ? (it.q.author_id === userId ? 'Tú' : data.authors[it.q.author_id] || 'Un compañero') : '';
 
   const toggle = (k: number) => {
@@ -74,9 +79,9 @@ export default function Runner() {
 
   return (
     <>
-      <div className="topbar" style={{ top: 49, zIndex: 4 }}>
+      <div className="topbar runbar">
         <div className="wrap">
-          <span style={{ fontFamily: 'var(--f-display)', fontWeight: 600, fontSize: 17 }}>{session.title}</span>
+          <span className="runtitle">{session.title}</span>
           <span className="spacer" />
           <span className="mono muted">{i + 1} / {items.length}</span>
           {session.seconds > 0 && <span className={`timer ${left < 600 ? 'low' : ''}`} aria-label="Tiempo restante">{clock(left)}</span>}
@@ -87,7 +92,18 @@ export default function Runner() {
         <div className="progress"><i style={{ width: `${(answeredCount / items.length) * 100}%` }} /></div>
       </div>
       <main className="wrap exam-layout">
-        <article className={`qcard ${locked ? 'locked' : ''}`}>
+        <article className={`qcard ${locked ? 'locked' : ''}`}
+          onTouchStart={(e) => { const t0 = e.touches[0]; touch.current = { x: t0.clientX, y: t0.clientY }; }}
+          onTouchEnd={(e) => {
+            // Swipe left/right to move between questions on phones.
+            const s0 = touch.current; touch.current = null;
+            if (!s0) return;
+            const t1 = e.changedTouches[0];
+            const dx = t1.clientX - s0.x, dy = t1.clientY - s0.y;
+            if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+            if (dx < 0 && i < items.length - 1) { setI(i + 1); setConfirming(false); window.scrollTo({ top: 0 }); }
+            if (dx > 0 && i > 0) { setI(i - 1); setConfirming(false); window.scrollTo({ top: 0 }); }
+          }}>
           <div className="qhead">
             <span className="tag">{domainsById[it.q.domain_id]?.code} · {domainsById[it.q.domain_id]?.name}</span>
             {it.q.source === 'official_sample' && <span className="tag accent">Ejemplo de la guía oficial</span>}
@@ -118,27 +134,39 @@ export default function Runner() {
             })}
           </div>
           {locked && (
-            <div className="expl"><b>{isRight(it) ? L.correct : L.incorrect}</b> {L.answer}: {it.correct.map((k) => LETTERS[k]).join(', ')}. {t.explanation}</div>
+            <>
+              <div className="expl"><b>{isRight(it) ? L.correct : L.incorrect}</b> {L.answer}: {it.correct.map((k) => LETTERS[k]).join(', ')}. {t.explanation}</div>
+              <StatLine stat={data.stats.get(it.q.id)} lang={lang} />
+              <DocLinks domain={domainsById[it.q.domain_id]} lang={lang} />
+            </>
           )}
-          <div className="row" style={{ marginTop: 18 }}>
-            <button className="btn" disabled={i === 0} onClick={() => { setI(i - 1); setConfirming(false); }}>Anterior</button>
+          <div className="qfoot"><ReportButton key={it.q.id} questionId={it.q.id} lang={lang} reported={data.reported.has(it.q.id)} onReported={() => markReported(it.q.id)} /></div>
+          <div className="row qactions">
+            <button className="btn" disabled={i === 0} onClick={() => { setI(i - 1); setConfirming(false); if (narrow) window.scrollTo({ top: 0 }); }}>Anterior</button>
             {practice && <button className="btn solid" disabled={locked || !it.pick.length} onClick={() => setItem({ checked: true })}>Comprobar</button>}
-            <button className="btn flagbtn" aria-pressed={it.flag} onClick={() => setItem({ flag: !it.flag })}>{it.flag ? 'Marcada para revisar' : 'Marcar para revisar'}</button>
-            <span className="spacer" />
-            {i < items.length - 1 && <button className={`btn ${practice && !locked ? '' : 'solid'}`} onClick={() => { setI(i + 1); setConfirming(false); }}>Siguiente</button>}
+            <button className="btn flagbtn" aria-pressed={it.flag} aria-label={it.flag ? 'Marcada para revisar' : 'Marcar para revisar'} onClick={() => setItem({ flag: !it.flag })}>
+              <svg className="only-sm" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 17V3.5M5 4h9l-2 3.5 2 3.5H5" fill={it.flag ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" /></svg>
+              <span className="hide-sm">{it.flag ? 'Marcada para revisar' : 'Marcar para revisar'}</span>
+            </button>
+            <span className="spacer hide-sm" />
+            {i < items.length - 1
+              ? <button className={`btn ${practice && !locked ? '' : 'solid'}`} onClick={() => { setI(i + 1); setConfirming(false); if (narrow) window.scrollTo({ top: 0 }); }}>Siguiente</button>
+              : narrow && <button className="btn solid" onClick={() => { const pending = items.length - answeredCount; if (!practice && (pending || flagged)) { setConfirming(true); document.getElementById('runside')?.scrollIntoView({ block: 'start' }); } else finish(items); }}>Terminar</button>}
           </div>
         </article>
-        <aside className="side">
-          <div className="eyebrow">Navegación · {answeredCount} de {items.length}</div>
+        <aside className="side" id="runside">
+          <details className="navdetails" open={!narrow}>
+          <summary className="eyebrow">Navegación · {answeredCount} de {items.length}{flagged ? ` · ${flagged} marcadas` : ''}</summary>
           <div className="navgrid">
             {items.map((x, k) => {
               let c = 'cell';
               if (k === i) c += ' cur';
               if (practice && x.checked) c += isRight(x) ? ' r' : ' w'; else if (x.pick.length) c += ' ans';
               if (x.flag) c += ' flag';
-              return <button key={k} className={c} aria-label={`Pregunta ${k + 1}`} onClick={() => { setI(k); setConfirming(false); }}>{k + 1}</button>;
+              return <button key={k} className={c} aria-label={`Pregunta ${k + 1}`} onClick={() => { setI(k); setConfirming(false); if (narrow) window.scrollTo({ top: 0 }); }}>{k + 1}</button>;
             })}
           </div>
+          </details>
           <div style={{ marginTop: 14 }}>
             <button className={`btn ${i === items.length - 1 ? 'solid' : ''}`} style={{ width: '100%' }} onClick={() => {
               const pending = items.length - answeredCount;
@@ -161,7 +189,8 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
   items: Item[]; title: string; practice: boolean; slug: string; domainsById: Record<string, Domain>;
   done: { secondsUsed: number | null; saveError?: string; saving: boolean }; onBack: () => void;
 }) {
-  const { lang } = useApp();
+  const { lang, userId } = useApp();
+  const { data, update } = useExam(slug, userId);
   const [onlyWrong, setOnlyWrong] = useState(false);
   const graded = practice ? items.filter(answered) : items;
   const ok = graded.filter(isRight).length;
@@ -228,6 +257,9 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
               <p className="qtext">{xt.stem}</p>
               <ul>{x.order.map((oi, j) => <li key={j} className={x.correct.includes(j) ? 'c' : x.pick.includes(j) ? 'x' : ''}>{LETTERS[j]}. {xt.options[oi]}</li>)}</ul>
               {xt.explanation && <div className="expl">{xt.explanation}</div>}
+              <StatLine stat={data?.stats.get(x.q.id)} lang={lang} />
+              <DocLinks domain={domainsById[x.q.domain_id]} lang={lang} />
+              <div className="qfoot"><ReportButton questionId={x.q.id} lang={lang} reported={!!data?.reported.has(x.q.id)} onReported={() => update((d) => ({ ...d, reported: new Set(d.reported).add(x.q.id) }))} /></div>
             </article>
           );
         })}

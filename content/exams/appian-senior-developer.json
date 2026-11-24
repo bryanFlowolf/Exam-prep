@@ -18,27 +18,97 @@
   {
    "code": "D1",
    "name": "Platform and Application Management",
-   "weight": 12
+   "weight": 12,
+   "docs": [
+    {
+     "title": "Health Check",
+     "url": "https://docs.appian.com/suite/help/latest/health-check.html"
+    },
+    {
+     "title": "Deploy to target environments",
+     "url": "https://docs.appian.com/suite/help/latest/Deploy_to_Target_Environments.html"
+    },
+    {
+     "title": "Managing log files",
+     "url": "https://docs.appian.com/suite/help/latest/managing-log-files.html"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Data Management",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Record type relationships",
+     "url": "https://docs.appian.com/suite/help/latest/record-type-relationships.html"
+    },
+    {
+     "title": "Data sync for record types",
+     "url": "https://docs.appian.com/suite/help/latest/about-data-sync.html"
+    },
+    {
+     "title": "Custom record fields",
+     "url": "https://docs.appian.com/suite/help/latest/custom-record-fields.html"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Application Design and Development",
-   "weight": 28
+   "weight": 28,
+   "docs": [
+    {
+     "title": "Object security",
+     "url": "https://docs.appian.com/suite/help/latest/object-security.html"
+    },
+    {
+     "title": "Record-level security",
+     "url": "https://docs.appian.com/suite/help/latest/record-level-security.html"
+    },
+    {
+     "title": "Appian design guidance",
+     "url": "https://docs.appian.com/suite/help/latest/appian-recommendations.html"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Advanced Appian Concepts",
-   "weight": 18
+   "weight": 18,
+   "docs": [
+    {
+     "title": "Connected system authentication",
+     "url": "https://docs.appian.com/suite/help/latest/connected_system_authentication.html"
+    },
+    {
+     "title": "Integration object",
+     "url": "https://docs.appian.com/suite/help/latest/Integration_Object.html"
+    },
+    {
+     "title": "Web API authentication",
+     "url": "https://docs.appian.com/suite/help/latest/Web_API_Authentication.html"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Performance & Scalability",
-   "weight": 22
+   "weight": 22,
+   "docs": [
+    {
+     "title": "Performance view",
+     "url": "https://docs.appian.com/suite/help/latest/Performance_View.html"
+    },
+    {
+     "title": "Process node properties (multiple instances)",
+     "url": "https://docs.appian.com/suite/help/latest/Process_Node_and_Smart_Service_Properties.html"
+    },
+    {
+     "title": "Performance and load testing",
+     "url": "https://community.appian.com/w/article/3216/performance-and-load-testing"
+    }
+   ]
   }
  ],
  "questions": [

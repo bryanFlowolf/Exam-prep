@@ -18,42 +18,138 @@
   {
    "code": "D1",
    "name": "Advanced Agent Architecture and Orchestration",
-   "weight": 17
+   "weight": 17,
+   "docs": [
+    {
+     "title": "How we built our multi-agent research system",
+     "url": "https://www.anthropic.com/research/multi-agent-research-system"
+    },
+    {
+     "title": "Effective harnesses for long-running agents",
+     "url": "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents"
+    },
+    {
+     "title": "Create custom subagents",
+     "url": "https://code.claude.com/docs/en/sub-agents"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Production Integration, Reliability, and Knowledge Grounding",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Citations",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/citations"
+    },
+    {
+     "title": "Files API",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/files"
+    },
+    {
+     "title": "API errors",
+     "url": "https://platform.claude.com/docs/en/api/errors"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Observability and Production Monitoring",
-   "weight": 12
+   "weight": 12,
+   "docs": [
+    {
+     "title": "Monitoring with OpenTelemetry",
+     "url": "https://code.claude.com/docs/en/monitoring-usage"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Advanced Debugging and Incident Response",
-   "weight": 10
+   "weight": 10,
+   "docs": [
+    {
+     "title": "Reduce hallucinations",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+    },
+    {
+     "title": "API errors",
+     "url": "https://platform.claude.com/docs/en/api/errors"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Evaluation Engineering and Quality Assurance",
-   "weight": 12
+   "weight": 12,
+   "docs": [
+    {
+     "title": "Define success criteria and build evaluations",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+    },
+    {
+     "title": "Demystifying evals for AI agents",
+     "url": "https://www.anthropic.com/research/demystifying-evals-for-ai-agents"
+    }
+   ]
   },
   {
    "code": "D6",
    "name": "Cost and Latency Optimization at Scale",
-   "weight": 8
+   "weight": 8,
+   "docs": [
+    {
+     "title": "Prompt caching",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+    },
+    {
+     "title": "Batch processing",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+    },
+    {
+     "title": "Reducing latency",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-latency"
+    }
+   ]
   },
   {
    "code": "D7",
    "name": "Runtime Guardrails and Production Security",
-   "weight": 11
+   "weight": 11,
+   "docs": [
+    {
+     "title": "Mitigate jailbreaks and prompt injections",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks"
+    },
+    {
+     "title": "Reduce prompt leak",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-prompt-leak"
+    },
+    {
+     "title": "Configure the sandboxed Bash tool",
+     "url": "https://code.claude.com/docs/en/sandboxing"
+    }
+   ]
   },
   {
    "code": "D8",
    "name": "Agent Fleet Operations for Software Delivery",
-   "weight": 10
+   "weight": 10,
+   "docs": [
+    {
+     "title": "Run Claude Code programmatically",
+     "url": "https://code.claude.com/docs/en/headless"
+    },
+    {
+     "title": "Claude Code GitHub Actions",
+     "url": "https://code.claude.com/docs/en/github-actions"
+    },
+    {
+     "title": "Best practices for Claude Code",
+     "url": "https://code.claude.com/docs/en/best-practices"
+    }
+   ]
   }
  ],
  "questions": [

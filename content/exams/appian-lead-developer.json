@@ -18,32 +18,116 @@
   {
    "code": "D1",
    "name": "Platform Management",
-   "weight": 15
+   "weight": 15,
+   "docs": [
+    {
+     "title": "Deploy to target environments",
+     "url": "https://docs.appian.com/suite/help/latest/Deploy_to_Target_Environments.html"
+    },
+    {
+     "title": "Managing import customization files",
+     "url": "https://docs.appian.com/suite/help/latest/Managing_Import_Customization_Files.html"
+    },
+    {
+     "title": "Enterprise architecture overview",
+     "url": "https://docs.appian.com/suite/help/latest/Enterprise_Architecture_Overview.html"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Application Design and Development",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Appian design guidance",
+     "url": "https://docs.appian.com/suite/help/latest/appian-recommendations.html"
+    },
+    {
+     "title": "Sub-process activity",
+     "url": "https://docs.appian.com/suite/help/latest/Sub-Process_Activity.html"
+    },
+    {
+     "title": "Sites",
+     "url": "https://docs.appian.com/suite/help/latest/Sites.html"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Data Management",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "What is Data Fabric?",
+     "url": "https://docs.appian.com/suite/help/latest/data-fabric.html"
+    },
+    {
+     "title": "Record-level security",
+     "url": "https://docs.appian.com/suite/help/latest/record-level-security.html"
+    },
+    {
+     "title": "Data sync for record types",
+     "url": "https://docs.appian.com/suite/help/latest/about-data-sync.html"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Proactively Design for Scalability and Performance",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Scaling Appian",
+     "url": "https://docs.appian.com/suite/help/latest/Scaling_Appian.html"
+    },
+    {
+     "title": "Performance view",
+     "url": "https://docs.appian.com/suite/help/latest/Performance_View.html"
+    },
+    {
+     "title": "Performance and load testing",
+     "url": "https://community.appian.com/w/article/3216/performance-and-load-testing"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Extending Appian",
-   "weight": 15
+   "weight": 15,
+   "docs": [
+    {
+     "title": "Connected systems",
+     "url": "https://docs.appian.com/suite/help/latest/Connected_System.html"
+    },
+    {
+     "title": "Web API authentication",
+     "url": "https://docs.appian.com/suite/help/latest/Web_API_Authentication.html"
+    },
+    {
+     "title": "Plug-ins",
+     "url": "https://docs.appian.com/suite/help/latest/Appian_Plug-ins.html"
+    }
+   ]
   },
   {
    "code": "D6",
    "name": "Project and Resource Management",
-   "weight": 10
+   "weight": 10,
+   "docs": [
+    {
+     "title": "The Appian Delivery Methodology",
+     "url": "https://community.appian.com/success/w/guide/2973/the-appian-delivery-methodology"
+    },
+    {
+     "title": "Recommended delivery methodology",
+     "url": "https://community.appian.com/w/article/3303/recommended-delivery-methodology"
+    },
+    {
+     "title": "Health Check",
+     "url": "https://docs.appian.com/suite/help/latest/health-check.html"
+    }
+   ]
   }
  ],
  "questions": [

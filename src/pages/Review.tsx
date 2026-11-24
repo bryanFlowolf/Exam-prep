@@ -5,6 +5,7 @@ import { useExam } from '../lib/useExam';
 import { LETTERS, fmtDate, shuffle, toItem } from '../lib/exam';
 import { removeReview } from '../lib/data';
 import { QL, qText } from '../lib/lang';
+import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 
 type Filter = 'all' | 'wrong' | 'flag';
 
@@ -76,8 +77,12 @@ export default function Review() {
               <p style={{ fontSize: 13.5, margin: '8px 0 0', color: 'var(--bad)' }}>{L.yourAnswer}: {r.last_pick.map((i) => t.options[i]).filter(Boolean).join(' / ')}</p>
             )}
             {t.explanation && <div className="expl">{t.explanation}</div>}
+            <StatLine stat={data.stats.get(q.id)} lang={lang} />
+            <DocLinks domain={domains[q.domain_id]} lang={lang} />
             <div className="row" style={{ marginTop: 10 }}>
               <button className={`btn small ${armed === q.id ? 'solid' : ''}`} onClick={() => remove(q.id)}>{armed === q.id ? 'Confirmar: quitar' : 'Quitar de la lista'}</button>
+              <span className="spacer" />
+              <ReportButton questionId={q.id} lang={lang} reported={data.reported.has(q.id)} onReported={() => update((d) => ({ ...d, reported: new Set(d.reported).add(q.id) }))} />
             </div>
           </article>
         ); })}

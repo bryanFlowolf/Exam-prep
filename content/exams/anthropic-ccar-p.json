@@ -18,37 +18,123 @@
   {
    "code": "D1",
    "name": "Solution Design and Architecture",
-   "weight": 18
+   "weight": 18,
+   "docs": [
+    {
+     "title": "Building effective agents",
+     "url": "https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+     "title": "How we built our multi-agent research system",
+     "url": "https://www.anthropic.com/research/multi-agent-research-system"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Claude Models, Prompting, and Context Engineering",
-   "weight": 13
+   "weight": 13,
+   "docs": [
+    {
+     "title": "Choosing a model",
+     "url": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model"
+    },
+    {
+     "title": "Prompting best practices",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+    },
+    {
+     "title": "Effective context engineering for AI agents",
+     "url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Integration",
-   "weight": 21
+   "weight": 21,
+   "docs": [
+    {
+     "title": "Tool use with Claude",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+    },
+    {
+     "title": "MCP connector",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/mcp-connector"
+    },
+    {
+     "title": "Agent SDK overview",
+     "url": "https://code.claude.com/docs/en/agent-sdk/overview"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Evaluation, Testing, and Optimization",
-   "weight": 17
+   "weight": 17,
+   "docs": [
+    {
+     "title": "Define success criteria and build evaluations",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+    },
+    {
+     "title": "Demystifying evals for AI agents",
+     "url": "https://www.anthropic.com/research/demystifying-evals-for-ai-agents"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Governance, Safety, and Risk Management",
-   "weight": 16
+   "weight": 16,
+   "docs": [
+    {
+     "title": "Mitigate jailbreaks and prompt injections",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks"
+    },
+    {
+     "title": "API and data retention",
+     "url": "https://platform.claude.com/docs/en/manage-claude/api-and-data-retention"
+    },
+    {
+     "title": "Data residency",
+     "url": "https://platform.claude.com/docs/en/manage-claude/data-residency"
+    }
+   ]
   },
   {
    "code": "D6",
    "name": "Stakeholder Communication and Lifecycle Management",
-   "weight": 7
+   "weight": 7,
+   "docs": [
+    {
+     "title": "Define success criteria and build evaluations",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+    },
+    {
+     "title": "Optimizing for cost and intelligence",
+     "url": "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+    }
+   ]
   },
   {
    "code": "D7",
    "name": "Developer Productivity and Operational Enablement",
-   "weight": 8
+   "weight": 8,
+   "docs": [
+    {
+     "title": "Best practices for Claude Code",
+     "url": "https://code.claude.com/docs/en/best-practices"
+    },
+    {
+     "title": "Claude Code GitHub Actions",
+     "url": "https://code.claude.com/docs/en/github-actions"
+    },
+    {
+     "title": "Extend Claude with skills",
+     "url": "https://code.claude.com/docs/en/skills"
+    }
+   ]
   }
  ],
  "questions": [

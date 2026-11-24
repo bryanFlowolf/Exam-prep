@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { answered, isRight } from './exam';
-import type { Attempt, Domain, Exam, Item, Mode, Profile, Question, ReviewItem } from './types';
+import type { Attempt, Domain, Exam, Item, Mode, Profile, Question, QuestionReport, QuestionStat, ReportReason, ReviewItem, Team, TeamMember, TeamProgressRow } from './types';
 
 const PAGE = 1000;
 
@@ -44,18 +44,36 @@ export type ExamData = {
   review: Map<string, ReviewItem>;
   attempts: Attempt[];
   authors: Record<string, string>;
+  /** Anonymous answer statistics by question id (empty if the insights migration is not applied yet). */
+  stats: Map<string, QuestionStat>;
+  /** Question ids this user has an open report on. */
+  reported: Set<string>;
+  targetDate: string | null;
 };
+
+/** Optional data from the 20261124 migration: an error (e.g. table missing) must not break the exam page. */
+async function optional<T>(p: PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  try {
+    const { data, error } = await p;
+    return error ? [] : data || [];
+  } catch {
+    return [];
+  }
+}
 
 export async function loadExam(slug: string, userId: string): Promise<ExamData> {
   const { data: exam, error } = await supabase.from('exams').select('*').eq('slug', slug).maybeSingle();
   if (error) throw error;
   if (!exam) throw new Error('Examen no encontrado');
-  const [domainsRes, questions, seenRows, reviewRows, attemptsRes] = await Promise.all([
+  const [domainsRes, questions, seenRows, reviewRows, attemptsRes, statRows, reportRows, planRows] = await Promise.all([
     supabase.from('domains').select('*').eq('exam_id', exam.id).order('weight', { ascending: false }),
     all<Question>((a, b) => supabase.from('questions').select('*').eq('exam_id', exam.id).eq('is_active', true).order('created_at').range(a, b)),
     all<{ question_id: string }>((a, b) => supabase.from('seen_questions').select('question_id').eq('exam_id', exam.id).eq('user_id', userId).range(a, b)),
     all<ReviewItem>((a, b) => supabase.from('review_items').select('*').eq('exam_id', exam.id).eq('user_id', userId).range(a, b)),
-    supabase.from('attempts').select('*').eq('exam_id', exam.id).eq('user_id', userId).order('finished_at', { ascending: false }).limit(20),
+    supabase.from('attempts').select('*').eq('exam_id', exam.id).eq('user_id', userId).order('finished_at', { ascending: false }).limit(60),
+    optional<QuestionStat>(supabase.from('question_stats').select('question_id, answered, correct, first_answered, first_correct, picks').eq('exam_id', exam.id).limit(5000)),
+    optional<{ question_id: string }>(supabase.from('question_reports').select('question_id').eq('exam_id', exam.id).eq('user_id', userId).eq('status', 'abierto')),
+    optional<{ target_date: string | null }>(supabase.from('exam_plans').select('target_date').eq('exam_id', exam.id).eq('user_id', userId)),
   ]);
   if (domainsRes.error) throw domainsRes.error;
   if (attemptsRes.error) throw attemptsRes.error;
@@ -73,6 +91,9 @@ export async function loadExam(slug: string, userId: string): Promise<ExamData> 
     review: new Map(reviewRows.map((r) => [r.question_id, r])),
     attempts: (attemptsRes.data || []) as Attempt[],
     authors,
+    stats: new Map(statRows.map((r) => [r.question_id, r])),
+    reported: new Set(reportRows.map((r) => r.question_id)),
+    targetDate: planRows[0]?.target_date ?? null,
   };
 }
 
@@ -116,6 +137,14 @@ export async function saveAttempt(
   let error: string | undefined;
   let attempt: Attempt | null = null;
   if (done.length) {
+    // Anonymous statistics first: the server counts it as a first answer only if the question is not seen yet.
+    // If this fails (for example, the migration is not applied), the attempt is still saved.
+    try {
+      await supabase.rpc('record_answers', {
+        p_exam: data.exam.id,
+        p: done.map((it) => ({ q: it.q.id, pick: it.pick.map((k) => it.order[k]) })),
+      });
+    } catch { /* statistics are best effort */ }
     const res = await supabase.from('attempts').insert({
       exam_id: data.exam.id, mode, correct: done.filter(isRight).length, total: done.length,
       seconds_used: secondsUsed, by_domain: byDomain, wrong_question_ids: wrongIds,
@@ -196,4 +225,131 @@ export async function listProfiles(): Promise<Profile[]> {
 export async function setAdmin(userId: string, value: boolean) {
   const { error } = await supabase.rpc('set_admin', { p_user: userId, p_value: value });
   if (error) throw error;
+}
+
+// ---- Preparación ----
+export async function saveTargetDate(examId: string, date: string | null) {
+  const { error } = await supabase.from('exam_plans').upsert({ exam_id: examId, target_date: date, updated_at: new Date().toISOString() }, { onConflict: 'user_id,exam_id' });
+  if (error) throw error;
+}
+
+// ---- Reportes de preguntas ----
+export async function reportQuestion(questionId: string, reason: ReportReason, comment: string, lang: string) {
+  const { error } = await supabase.from('question_reports').insert({ question_id: questionId, reason, comment: comment.trim().slice(0, 1000), lang });
+  if (error) throw error;
+}
+
+export type ReportRow = QuestionReport & { reporter: string; question: Question | null; exam: Pick<Exam, 'id' | 'slug' | 'code' | 'name'> | null };
+
+export async function listReports(status: QuestionReport['status'] | 'all' = 'abierto'): Promise<ReportRow[]> {
+  let q = supabase.from('question_reports').select('*').order('created_at', { ascending: false }).limit(500);
+  if (status !== 'all') q = q.eq('status', status);
+  const { data, error } = await q;
+  if (error) throw error;
+  const rows = (data || []) as QuestionReport[];
+  const qIds = [...new Set(rows.map((r) => r.question_id))];
+  const uIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean) as string[])];
+  const eIds = [...new Set(rows.map((r) => r.exam_id))];
+  const [qs, us, es] = await Promise.all([
+    qIds.length ? supabase.from('questions').select('*').in('id', qIds) : Promise.resolve({ data: [] }),
+    uIds.length ? supabase.from('profiles').select('id, display_name').in('id', uIds) : Promise.resolve({ data: [] }),
+    eIds.length ? supabase.from('exams').select('id, slug, code, name').in('id', eIds) : Promise.resolve({ data: [] }),
+  ]);
+  const qm = new Map(((qs.data || []) as Question[]).map((x) => [x.id, x]));
+  const um = new Map(((us.data || []) as { id: string; display_name: string }[]).map((x) => [x.id, x.display_name]));
+  const em = new Map(((es.data || []) as ReportRow['exam'][]).map((x) => [x!.id, x]));
+  return rows.map((r) => ({ ...r, reporter: (r.user_id && um.get(r.user_id)) || 'Usuario eliminado', question: qm.get(r.question_id) || null, exam: em.get(r.exam_id) || null }));
+}
+
+export async function resolveReport(id: string, status: QuestionReport['status'], note: string) {
+  const { error } = await supabase.from('question_reports').update({ status, admin_note: note.trim().slice(0, 1000) }).eq('id', id);
+  if (error) throw error;
+}
+
+/** Everything an admin needs to judge question quality for one exam. */
+export async function loadQuality(examId: string) {
+  const [questions, domains, stats, reports] = await Promise.all([
+    all<Question>((a, b) => supabase.from('questions').select('*').eq('exam_id', examId).eq('is_active', true).order('created_at').range(a, b)),
+    supabase.from('domains').select('*').eq('exam_id', examId),
+    all<QuestionStat>((a, b) => supabase.from('question_stats').select('question_id, answered, correct, first_answered, first_correct, picks').eq('exam_id', examId).range(a, b)),
+    all<{ question_id: string }>((a, b) => supabase.from('question_reports').select('question_id').eq('exam_id', examId).eq('status', 'abierto').range(a, b)),
+  ]);
+  if (domains.error) throw domains.error;
+  const openReports = new Map<string, number>();
+  for (const r of reports) openReports.set(r.question_id, (openReports.get(r.question_id) || 0) + 1);
+  return { questions, domains: (domains.data || []) as Domain[], stats: new Map(stats.map((s) => [s.question_id, s])), openReports };
+}
+
+export async function setQuestionActive(id: string, value: boolean) {
+  const { error } = await supabase.from('questions').update({ is_active: value }).eq('id', id);
+  if (error) throw error;
+}
+
+// ---- Equipos ----
+export async function listTeams(): Promise<Team[]> {
+  const { data, error } = await supabase.from('teams').select('id, name').order('name');
+  if (error) throw error;
+  return (data || []) as Team[];
+}
+
+export async function listTeamMembers(): Promise<TeamMember[]> {
+  const { data, error } = await supabase.from('team_members').select('team_id, user_id, role, shares_progress');
+  if (error) throw error;
+  return (data || []) as TeamMember[];
+}
+
+export async function myTeamCount(userId: string): Promise<number> {
+  const { count, error } = await supabase.from('team_members').select('team_id', { count: 'exact', head: true }).eq('user_id', userId);
+  return error ? 0 : count || 0;
+}
+
+export async function createTeam(name: string) {
+  const { error } = await supabase.from('teams').insert({ name: name.trim().slice(0, 80) });
+  if (error) throw error;
+}
+
+export async function renameTeam(id: string, name: string) {
+  const { error } = await supabase.from('teams').update({ name: name.trim().slice(0, 80) }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteTeam(id: string) {
+  const { error } = await supabase.from('teams').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function addTeamMember(teamId: string, userId: string, role: 'lead' | 'member') {
+  const { error } = await supabase.from('team_members').insert({ team_id: teamId, user_id: userId, role });
+  if (error) throw error;
+}
+
+export async function setTeamRole(teamId: string, userId: string, role: 'lead' | 'member') {
+  const { error } = await supabase.from('team_members').update({ role }).eq('team_id', teamId).eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function removeTeamMember(teamId: string, userId: string) {
+  const { error } = await supabase.from('team_members').delete().eq('team_id', teamId).eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function setShareProgress(teamId: string, value: boolean) {
+  const { error } = await supabase.rpc('set_share_progress', { p_team: teamId, p_value: value });
+  if (error) throw error;
+}
+
+export async function teamProgress(teamId: string): Promise<TeamProgressRow[]> {
+  const { data, error } = await supabase.rpc('team_progress', { p_team: teamId });
+  if (error) throw error;
+  return (data || []) as TeamProgressRow[];
+}
+
+export async function loadExamsWithDomains(): Promise<{ exams: Exam[]; domains: Domain[] }> {
+  const [e, d] = await Promise.all([
+    supabase.from('exams').select('*').order('vendor').order('name'),
+    supabase.from('domains').select('*'),
+  ]);
+  if (e.error) throw e.error;
+  if (d.error) throw d.error;
+  return { exams: (e.data || []) as Exam[], domains: (d.data || []) as Domain[] };
 }

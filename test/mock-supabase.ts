@@ -11,6 +11,8 @@ const now = () => new Date().toISOString();
 const db: Record<string, Row[]> = {
   profiles: [{ id: uid, display_name: 'demo', is_admin: true }, { id: 'u-ana', display_name: 'Ana', is_admin: false }],
   exams: [], domains: [], questions: [], attempts: [], seen_questions: [], review_items: [], access_allowlist: [],
+  question_stats: [], question_reports: [], exam_plans: [], teams: [{ id: 't-demo', name: 'Equipo demo' }],
+  team_members: [{ team_id: 't-demo', user_id: uid, role: 'lead', shares_progress: true }, { team_id: 't-demo', user_id: 'u-ana', role: 'member', shares_progress: false }],
 };
 
 function importExam(p: any) {
@@ -21,7 +23,7 @@ function importExam(p: any) {
   for (const d of p.domains) {
     let r = db.domains.find((x) => x.exam_id === e!.id && x.code === d.code);
     if (!r) { r = { id: uuid(), exam_id: e!.id, code: d.code }; db.domains.push(r); }
-    Object.assign(r, { name: d.name, weight: d.weight });
+    Object.assign(r, { name: d.name, weight: d.weight, docs: d.docs || r.docs || [] });
   }
   db.questions = db.questions.filter((q) => !(q.exam_id === e!.id && q.source !== 'team'));
   p.questions.forEach((q: any, i: number) => db.questions.push({
@@ -38,7 +40,7 @@ importExam({ slug: 'demo-architect', vendor: 'Anthropic', code: 'CCA-F', name: '
   exam: { questions: 3, minutes: 5, mini: { questions: 2, minutes: 3 } }, domains: [{ code: 'D1', name: 'Arquitectura', weight: 100 }],
   questions: [1, 2, 3, 4].map((n) => ({ domain: 'D1', stem: `Pregunta de demostración número ${n}`, options: ['a', 'b', 'c'], correct: [n % 3] })) });
 
-const OWN = new Set(['attempts', 'seen_questions', 'review_items']);
+const OWN = new Set(['attempts', 'seen_questions', 'review_items', 'exam_plans']);
 
 class Query implements PromiseLike<any> {
   private filters: ((r: Row) => boolean)[] = [];
@@ -108,6 +110,23 @@ export function createClient() {
     rpc: async (fn: string, args: any) => {
       if (fn === 'import_exam') return { data: importExam(args.p), error: null };
       if (fn === 'set_admin') { const p = db.profiles.find((x) => x.id === args.p_user); if (p) p.is_admin = args.p_value; return { data: null, error: null }; }
+      if (fn === 'record_answers') {
+        for (const a of args.p) {
+          const q = db.questions.find((x) => x.id === a.q); if (!q) continue;
+          let st = db.question_stats.find((x) => x.question_id === q.id);
+          if (!st) { st = { question_id: q.id, exam_id: q.exam_id, answered: 0, correct: 0, first_answered: 0, first_correct: 0, picks: q.options.map(() => 0) }; db.question_stats.push(st); }
+          const right = [...a.pick].sort().join() === [...q.correct].sort().join();
+          const first = !db.seen_questions.some((x) => x.question_id === q.id && x.user_id === uid);
+          st.answered++; st.correct += +right; st.first_answered += +first; st.first_correct += +(first && right);
+          for (const i of a.pick) st.picks[i] = (st.picks[i] || 0) + 1;
+        }
+        return { data: args.p.length, error: null };
+      }
+      if (fn === 'set_share_progress') { const m = db.team_members.find((x) => x.team_id === args.p_team && x.user_id === uid); if (m) m.shares_progress = args.p_value; return { data: null, error: null }; }
+      if (fn === 'team_progress') {
+        return { data: db.team_members.filter((m) => m.team_id === args.p_team).map((m) => ({ user_id: m.user_id, display_name: db.profiles.find((p) => p.id === m.user_id)?.display_name, role: m.role, shares_progress: m.shares_progress,
+          exam_id: null, attempts: null, answered: null, last_at: null, last_sim_pct: null, by_domain: null, target_date: null })), error: null };
+      }
       return { data: null, error: { message: 'unknown rpc' } };
     },
   };

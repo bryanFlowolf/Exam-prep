@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { NavLink, Navigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { addAllow, importExam, listAllowlist, listExams, listProfiles, removeAllow, setAdmin, setExamPublished } from '../lib/data';
 import type { Exam, Profile } from '../lib/types';
@@ -19,6 +19,17 @@ function validate(p: any): string | null {
     if (q.correct.some((c: number) => !Number.isInteger(c) || c < 0 || c >= q.options.length)) return `Pregunta ${i + 1}: índice de respuesta fuera de rango.`;
   }
   return null;
+}
+
+/** Navigation between the admin pages. */
+export function AdminTabs() {
+  return (
+    <nav className="tabs" aria-label="Secciones de administración">
+      <NavLink to="/admin" end>General</NavLink>
+      <NavLink to="/admin/calidad">Calidad del banco</NavLink>
+      <NavLink to="/admin/equipos">Equipos</NavLink>
+    </nav>
+  );
 }
 
 export default function Admin() {
@@ -64,6 +75,7 @@ export default function Admin() {
         <h1>Administración</h1>
         <p>Importa exámenes, controla quién puede registrarse y quién administra. Los administradores no pueden ver el progreso personal de nadie.</p>
       </header>
+      <AdminTabs />
       {msg && <div className={`msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 
       <section className="panel form">

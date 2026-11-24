@@ -3,11 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../App';
 import { useExam } from '../lib/useExam';
 import { buildExam, fmtDate, freshFirst, shuffle, toItem } from '../lib/exam';
-import { resetSeen } from '../lib/data';
+import { resetSeen, saveTargetDate } from '../lib/data';
 import type { Mode, Question } from '../lib/types';
+import { MIN_ANSWERS, READY_WINDOW, pct, readiness, recentTotals, targetedPool, verdict, weakestDomains } from '../lib/readiness';
 
 const MODE_LABEL: Record<Mode, string> = {
-  sim: 'Simulacro', mini: 'Mini-examen', practice: 'Práctica', review: 'Repaso', team: 'Equipo', last_wrong: 'Falladas',
+  sim: 'Simulacro', mini: 'Mini-examen', practice: 'Práctica', review: 'Repaso', team: 'Equipo', last_wrong: 'Falladas', targeted: 'Práctica dirigida',
 };
 
 export default function ExamHome() {
@@ -17,6 +18,7 @@ export default function ExamHome() {
   const nav = useNavigate();
   const [practice, setPractice] = useState<Set<string> | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [dateMsg, setDateMsg] = useState('');
 
   const stats = useMemo(() => {
     if (!data) return null;
@@ -25,12 +27,10 @@ export default function ExamHome() {
     const unseen = bank.filter((q) => !data.seen.has(q.id)).length;
     const reviewIds = new Set([...data.review.keys()].filter((id) => data.questions.some((q) => q.id === id)));
     const lastScored = data.attempts.find((a) => a.mode === 'sim' || a.mode === 'mini' || a.mode === 'practice');
-    const perDomain: Record<string, { ok: number; total: number }> = {};
-    for (const a of data.attempts) for (const [code, v] of Object.entries(a.by_domain || {})) {
-      perDomain[code] = perDomain[code] || { ok: 0, total: 0 };
-      perDomain[code].ok += v.ok; perDomain[code].total += v.total;
-    }
-    return { bank, team, unseen, reviewIds, lastScored, perDomain };
+    const ready = readiness(data.domains, recentTotals(data.attempts), data.exam.passing_note);
+    const weak = weakestDomains(ready);
+    const trend = data.attempts.filter((a) => (a.mode === 'sim' || a.mode === 'mini') && a.total).slice(0, 8).reverse();
+    return { bank, team, unseen, reviewIds, lastScored, ready, weak, trend };
   }, [data]);
 
   if (error) return <main className="wrap"><div className="msg err" style={{ marginTop: 24 }}>{error}</div></main>;
@@ -45,6 +45,64 @@ export default function ExamHome() {
   };
   const practiceItems = (pool: Question[]) => freshFirst(pool, data.seen).map(toItem);
   const lastWrongIds = new Set(stats.lastScored?.wrong_question_ids || []);
+  const r = stats.ready;
+  const v = verdict(r.probability);
+  const weakIds = new Set(stats.weak.map((w) => w.domain.id));
+  const daysLeft = data.targetDate ? Math.ceil((new Date(data.targetDate + 'T12:00:00').getTime() - Date.now()) / 86400000) : null;
+  const onDate = async (value: string) => {
+    const date = value || null;
+    update((d) => ({ ...d, targetDate: date }));
+    try { await saveTargetDate(exam.id, date); setDateMsg(''); } catch { setDateMsg('No se ha podido guardar la fecha.'); }
+  };
+
+  const readinessPanel = () => (
+    <section className="panel ready" aria-labelledby="ready-h">
+      <div className="ready-head">
+        <h2 id="ready-h">Tu preparación</h2>
+        <span className={`verdict ${v.cls}`}>{v.text}</span>
+      </div>
+      <div className="ready-kpis">
+        <div><b>{pct(r.estimate)}</b><span>nota estimada · aprobado {pct(r.pass)}</span></div>
+        <div><b>{pct(r.probability)}</b><span>probabilidad de aprobar</span></div>
+        <div><b>{r.answered}</b><span>respuestas en tus últimos intentos</span></div>
+        <div><b>{pct(r.coverage)}</b><span>del temario con 5+ respuestas</span></div>
+        <div className="datecell">
+          <label htmlFor="target-date">Fecha de tu examen</label>
+          <input id="target-date" type="date" value={data.targetDate || ''} onChange={(e) => onDate(e.target.value)} />
+          <span>{daysLeft === null ? 'sin fecha' : daysLeft > 1 ? `faltan ${daysLeft} días` : daysLeft === 1 ? 'mañana' : daysLeft === 0 ? 'hoy' : 'fecha pasada'}</span>
+        </div>
+      </div>
+      {dateMsg && <div className="msg err">{dateMsg}</div>}
+      {r.answered < MIN_ANSWERS && (
+        <p className="note">Responde al menos {MIN_ANSWERS} preguntas en simulacros, mini-exámenes o práctica para ver la probabilidad de aprobar. Llevas {r.answered}.</p>
+      )}
+      {stats.trend.length > 1 && (
+        <div className="trend" aria-label="Evolución de tus simulacros y mini-exámenes">
+          <span className="eyebrow">Simulacros y mini-exámenes</span>
+          <div className="trend-bars">
+            {stats.trend.map((a) => {
+              const p = a.correct / a.total;
+              return <i key={a.id} title={`${fmtDate(a.finished_at)} · ${Math.round(p * 100)}%`} className={p >= r.pass ? 'ok' : 'bad'} style={{ height: `${Math.max(6, p * 100)}%` }} />;
+            })}
+            <b className="passline" style={{ bottom: `${r.pass * 100}%` }} />
+          </div>
+        </div>
+      )}
+      <div className="eyebrow" style={{ margin: '14px 0 4px' }}>Por dominio · peso oficial · tu acierto</div>
+      {r.domains.map(({ domain: d, ok, total, acc }) => {
+        const col = acc === null ? 'var(--muted)' : acc >= Math.max(0.8, r.pass + 0.08) ? 'var(--ok)' : acc >= r.pass ? 'var(--flag)' : 'var(--bad)';
+        return (
+          <div className="wrow" key={d.id}>
+            <span>{d.code} · {d.name}{weakIds.has(d.id) && <span className="tag multi" style={{ marginLeft: 6 }}>Prioridad</span>}</span>
+            <span className="mono" style={{ textAlign: 'right' }}>{Number(d.weight).toFixed(0)}%</span>
+            <span className="mono" style={{ textAlign: 'right', color: col, fontWeight: 600 }} title={total ? `${ok}/${total}` : 'Sin respuestas'}>{acc === null ? '—' : Math.round(acc * 100) + '%'}</span>
+            <div className="bar pass" style={{ ['--pass' as string]: `${r.pass * 100}%` }}><i style={{ width: `${(acc ?? 0) * 100}%`, background: col }} /></div>
+          </div>
+        );
+      })}
+      <p className="note" style={{ marginTop: 10 }}>Se calcula con tus últimos {READY_WINDOW} intentos de simulacro, mini-examen y práctica por dominio (los repasos y la práctica dirigida no cuentan porque se centran en lo que fallaste). Cada dominio pesa como en el examen oficial y los dominios con pocas respuestas cuentan como un 50 % hasta que tengas datos. Es una orientación, no una garantía.</p>
+    </section>
+  );
 
   return (
     <main className="wrap">
@@ -62,6 +120,8 @@ export default function ExamHome() {
         </div>
         <p className="note">Tu progreso se guarda en tu cuenta y solo lo ves tú. Cada modo te muestra primero las preguntas que aún no has respondido.</p>
       </header>
+
+      {readinessPanel()}
 
       <section className="grid-cards">
         <div className="card primary">
@@ -91,6 +151,15 @@ export default function ExamHome() {
           </div>
           <button className="btn" disabled={!domainIds.size} onClick={() => start('practice', practiceItems(stats.bank.filter((q) => domainIds.has(q.domain_id))), 'Práctica por dominio')}>Empezar práctica</button>
         </div>
+        <div className="card targeted">
+          <div className="eyebrow">Tus puntos débiles</div>
+          <h2>Práctica dirigida</h2>
+          <p>{stats.ready.answered
+            ? <>Los dominios donde más puntos puedes ganar según tu acierto y su peso en el examen: <b>{stats.weak.map((w) => w.domain.code).join(' y ') || '—'}</b>. Empieza por las preguntas que fallaste.</>
+            : <>Todavía no hay resultados tuyos: empieza por los dominios que más pesan, <b>{stats.weak.map((w) => w.domain.code).join(' y ')}</b>.</>}</p>
+          <div className="meta">20 preguntas · corrección al momento</div>
+          <button className="btn" disabled={!stats.weak.length} onClick={() => start('targeted', targetedPool(stats.weak.map((w) => w.domain), stats.bank, data.review, data.seen).map(toItem), `Práctica dirigida: ${stats.weak.map((w) => w.domain.code).join(' y ')}`)}>Practicar puntos débiles</button>
+        </div>
         <div className="card">
           <div className="eyebrow">Solo tú la ves</div>
           <h2>Mi lista de repaso</h2>
@@ -112,23 +181,6 @@ export default function ExamHome() {
             <button className="btn" disabled={!stats.team.length} onClick={() => start('team', practiceItems(stats.team), 'Preguntas del equipo')}>Practicarlas</button>
           </div>
         </div>
-      </section>
-
-      <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 8 }}>Peso de cada dominio · tu acierto acumulado</div>
-        {domains.map((d) => {
-          const s = stats.perDomain[d.code];
-          const pct = s && s.total ? Math.round((s.ok / s.total) * 100) : null;
-          const col = pct === null ? 'var(--muted)' : pct >= 80 ? 'var(--ok)' : pct >= 65 ? 'var(--flag)' : 'var(--bad)';
-          return (
-            <div className="wrow" key={d.id}>
-              <span>{d.code} · {d.name}</span>
-              <span className="mono" style={{ textAlign: 'right' }}>{Number(d.weight).toFixed(1)}%</span>
-              <span className="mono" style={{ textAlign: 'right', color: col, fontWeight: 600 }}>{pct === null ? '—' : pct + '%'}</span>
-              <div className="bar"><i style={{ width: `${Math.min(100, (Number(d.weight) / Math.max(...domains.map((x) => Number(x.weight)))) * 100)}%` }} /></div>
-            </div>
-          );
-        })}
       </section>
 
       <section className="panel">

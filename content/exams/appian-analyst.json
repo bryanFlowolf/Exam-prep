@@ -18,27 +18,93 @@
   {
    "code": "D1",
    "name": "Introduction to the Appian Platform",
-   "weight": 24
+   "weight": 24,
+   "docs": [
+    {
+     "title": "Appian Designer",
+     "url": "https://docs.appian.com/suite/help/latest/welcome-app-designer.html"
+    },
+    {
+     "title": "Design objects",
+     "url": "https://docs.appian.com/suite/help/latest/design-objects.html"
+    },
+    {
+     "title": "Object security",
+     "url": "https://docs.appian.com/suite/help/latest/object-security.html"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Appian Software Development Lifecycle (SDLC)",
-   "weight": 22
+   "weight": 22,
+   "docs": [
+    {
+     "title": "The Appian Delivery Methodology",
+     "url": "https://community.appian.com/success/w/guide/2973/the-appian-delivery-methodology"
+    },
+    {
+     "title": "The Scrum Guide",
+     "url": "https://scrumguides.org/scrum-guide.html"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Requirements Gathering",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Delivery process overview",
+     "url": "https://community.appian.com/success/w/article/2992/delivery-process-overview"
+    },
+    {
+     "title": "Automation use cases",
+     "url": "https://docs.appian.com/suite/help/latest/Automation_Use_Cases.html"
+    },
+    {
+     "title": "Interface recipes",
+     "url": "https://docs.appian.com/suite/help/latest/SAIL_Recipes.html"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "User Story Creation",
-   "weight": 14
+   "weight": 14,
+   "docs": [
+    {
+     "title": "Ready-to-Done: streamline user stories in Appian",
+     "url": "https://community.appian.com/w/guide/3315/ready-to-done-streamline-user-stories-in-appian"
+    },
+    {
+     "title": "User stories (Agile Alliance)",
+     "url": "https://agilealliance.org/agile101/user-stories"
+    },
+    {
+     "title": "INVEST (Agile Alliance)",
+     "url": "https://agilealliance.org/glossary/invest"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Business Process Modeling",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Process model object",
+     "url": "https://docs.appian.com/suite/help/latest/process-model-object.html"
+    },
+    {
+     "title": "Gateways",
+     "url": "https://docs.appian.com/suite/help/latest/Gateways.html"
+    },
+    {
+     "title": "Connected systems",
+     "url": "https://docs.appian.com/suite/help/latest/Connected_System.html"
+    }
+   ]
   }
  ],
  "questions": [

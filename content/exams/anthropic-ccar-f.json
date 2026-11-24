@@ -18,27 +18,89 @@
   {
    "code": "D1",
    "name": "Agentic Architecture & Orchestration",
-   "weight": 27
+   "weight": 27,
+   "docs": [
+    {
+     "title": "Building effective agents",
+     "url": "https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+     "title": "How we built our multi-agent research system",
+     "url": "https://www.anthropic.com/research/multi-agent-research-system"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Tool Design & MCP Integration",
-   "weight": 18
+   "weight": 18,
+   "docs": [
+    {
+     "title": "Tool use with Claude",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+    },
+    {
+     "title": "Writing effective tools for agents",
+     "url": "https://www.anthropic.com/research/writing-tools-for-agents"
+    },
+    {
+     "title": "MCP connector",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/mcp-connector"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Claude Code Configuration & Workflows",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "How Claude remembers your project (CLAUDE.md)",
+     "url": "https://code.claude.com/docs/en/memory"
+    },
+    {
+     "title": "Claude Code settings",
+     "url": "https://code.claude.com/docs/en/settings"
+    },
+    {
+     "title": "Create custom subagents",
+     "url": "https://code.claude.com/docs/en/sub-agents"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Prompt Engineering & Structured Output",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Prompt engineering overview",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview"
+    },
+    {
+     "title": "Structured outputs",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Context Management & Reliability",
-   "weight": 15
+   "weight": 15,
+   "docs": [
+    {
+     "title": "Effective context engineering for AI agents",
+     "url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents"
+    },
+    {
+     "title": "Context windows",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+    },
+    {
+     "title": "Prompt caching",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+    }
+   ]
   }
  ],
  "questions": [

@@ -18,42 +18,138 @@
   {
    "code": "D1",
    "name": "Agents and Workflows",
-   "weight": 17
+   "weight": 17,
+   "docs": [
+    {
+     "title": "Building effective agents",
+     "url": "https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+     "title": "Agent SDK overview",
+     "url": "https://code.claude.com/docs/en/agent-sdk/overview"
+    }
+   ]
   },
   {
    "code": "D2",
    "name": "Applications and Integration",
-   "weight": 20
+   "weight": 20,
+   "docs": [
+    {
+     "title": "Streaming messages",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/streaming"
+    },
+    {
+     "title": "API errors",
+     "url": "https://platform.claude.com/docs/en/api/errors"
+    },
+    {
+     "title": "Rate limits",
+     "url": "https://platform.claude.com/docs/en/api/rate-limits"
+    }
+   ]
   },
   {
    "code": "D3",
    "name": "Claude Code",
-   "weight": 8
+   "weight": 8,
+   "docs": [
+    {
+     "title": "Claude Code overview",
+     "url": "https://code.claude.com/docs/en/overview"
+    },
+    {
+     "title": "How Claude remembers your project (CLAUDE.md)",
+     "url": "https://code.claude.com/docs/en/memory"
+    },
+    {
+     "title": "Automate actions with hooks",
+     "url": "https://code.claude.com/docs/en/hooks-guide"
+    }
+   ]
   },
   {
    "code": "D4",
    "name": "Eval, Testing, and Debugging",
-   "weight": 10
+   "weight": 10,
+   "docs": [
+    {
+     "title": "Define success criteria and build evaluations",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+    },
+    {
+     "title": "Increase output consistency",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/increase-consistency"
+    }
+   ]
   },
   {
    "code": "D5",
    "name": "Model Selection and Optimization",
-   "weight": 12
+   "weight": 12,
+   "docs": [
+    {
+     "title": "Choosing a model",
+     "url": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model"
+    },
+    {
+     "title": "Models overview",
+     "url": "https://platform.claude.com/docs/en/models/overview"
+    }
+   ]
   },
   {
    "code": "D6",
    "name": "Prompt and Context Engineering",
-   "weight": 15
+   "weight": 15,
+   "docs": [
+    {
+     "title": "Prompting best practices",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+    },
+    {
+     "title": "Effective context engineering for AI agents",
+     "url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents"
+    },
+    {
+     "title": "Structured outputs",
+     "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+    }
+   ]
   },
   {
    "code": "D7",
    "name": "Security and Safety",
-   "weight": 8
+   "weight": 8,
+   "docs": [
+    {
+     "title": "Mitigate jailbreaks and prompt injections",
+     "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks"
+    },
+    {
+     "title": "Configure permissions",
+     "url": "https://code.claude.com/docs/en/permissions"
+    }
+   ]
   },
   {
    "code": "D8",
    "name": "Tools and MCP",
-   "weight": 10
+   "weight": 10,
+   "docs": [
+    {
+     "title": "Tool use with Claude",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+    },
+    {
+     "title": "Define tools",
+     "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+    },
+    {
+     "title": "Connect Claude Code to tools via MCP",
+     "url": "https://code.claude.com/docs/en/mcp"
+    }
+   ]
   }
  ],
  "questions": [
