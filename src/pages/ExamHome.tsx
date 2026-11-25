@@ -14,7 +14,7 @@ const MODE_LABEL: Record<Mode, string> = {
 
 export default function ExamHome() {
   const { slug = '' } = useParams();
-  const { userId, setSession } = useApp();
+  const { userId, session, setSession } = useApp();
   const { data, error, update } = useExam(slug, userId);
   const nav = useNavigate();
   const [practice, setPractice] = useState<Set<string> | null>(null);
@@ -132,6 +132,15 @@ export default function ExamHome() {
           <div><b>{stats.bank.length}</b><span>preguntas en el banco</span></div>
           <div><b>{stats.unseen}</b><span>sin ver todavía</span></div>
         </div>
+        {session?.examSlug === slug && (
+          <div className="resume">
+            <span><b>Tienes un examen a medias:</b> {session.title}.</span>
+            <span className="row">
+              <button className="btn solid small" onClick={() => nav(`/e/${slug}/examen`)}>Continuar</button>
+              <button className="btn small" onClick={() => setSession(null)}>Descartar</button>
+            </span>
+          </div>
+        )}
         <p className="note">Tu progreso se guarda en tu cuenta y solo lo ves tú. Cada modo te muestra primero las preguntas que aún no has respondido.</p>
         {guideFor(exam.vendor) && <p className="note"><Link to={`/registro#${exam.vendor.toLowerCase()}`}>Cómo registrarte en el examen oficial de {guideFor(exam.vendor)!.label} →</Link></p>}
       </header>

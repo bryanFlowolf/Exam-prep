@@ -34,10 +34,24 @@ export const useApp = () => {
   return c;
 };
 
+export const RUN_KEY = 'exam-prep-run';
+export const RUN_PROGRESS_KEY = 'exam-prep-run-progress';
+function loadRun(): { uid?: string; session: Session } | null {
+  try { return JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); } catch { return null; }
+}
+function saveRun(s: Session | null, uid?: string) {
+  try {
+    if (s) localStorage.setItem(RUN_KEY, JSON.stringify({ uid, session: s }));
+    else { localStorage.removeItem(RUN_KEY); localStorage.removeItem(RUN_PROGRESS_KEY); }
+  } catch { /* storage unavailable: the exam just won't survive a reload */ }
+}
+
 export default function App() {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSessionState] = useState<Session | null>(() => loadRun()?.session ?? null);
+  // Persist the exam in progress so it survives a reload or closing the tab.
+  const setSession = (s: Session | null) => { setSessionState(s); saveRun(s, auth?.user.id); };
   const [lang, setLangState] = useState<Lang>(loadLang);
   const [teamCount, setTeamCount] = useState(0);
   const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
@@ -50,6 +64,10 @@ export default function App() {
 
   const refreshProfile = async () => { try { setProfile(await getMyProfile()); } catch { setProfile(null); } };
   useEffect(() => {
+    if (auth) {
+      const run = loadRun();
+      if (run && run.uid !== auth.user.id) { setSessionState(null); saveRun(null); }
+    }
     if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); } else { setProfile(null); setTeamCount(0); }
   }, [auth?.user.id]);
 

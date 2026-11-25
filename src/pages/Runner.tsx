@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMedia } from '../lib/useMedia';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { useApp } from '../App';
+import { RUN_KEY, RUN_PROGRESS_KEY, useApp } from '../App';
 import { useExam } from '../lib/useExam';
 import { LETTERS, answered, clock, isRight } from '../lib/exam';
 import { saveAttempt } from '../lib/data';
@@ -15,9 +15,17 @@ export default function Runner() {
   const L = QL[lang];
   const { data, update } = useExam(slug, userId);
   const nav = useNavigate();
-  const [items, setItems] = useState<Item[]>(() => session?.items || []);
-  const [i, setI] = useState(0);
-  const [left, setLeft] = useState(session?.seconds || 0);
+  // Progress saved for this run (same startedAt), so a reload or a closed tab resumes where it was.
+  const saved = useMemo(() => loadProgress(session?.startedAt), []);
+  const [items, setItems] = useState<Item[]>(() => saved?.items || session?.items || []);
+  const [i, setI] = useState(saved?.i || 0);
+  // Active seconds spent (pauses don't count). The countdown is derived from it.
+  const [used, setUsed] = useState(saved?.used || 0);
+  const [paused, setPaused] = useState(!!saved);
+  const [timerOff, setTimerOff] = useState(!!saved?.timerOff);
+  const [timerMenu, setTimerMenu] = useState(false);
+  const timed = !!session?.seconds && !timerOff;
+  const left = (session?.seconds || 0) - used;
   const [confirming, setConfirming] = useState(false);
   const [quitArmed, setQuitArmed] = useState(false);
   const [done, setDone] = useState<null | { secondsUsed: number | null; saveError?: string; saving: boolean }>(null);
@@ -31,11 +39,14 @@ export default function Runner() {
   const finish = async (current: Item[]) => {
     if (!session || !data || finishing.current) return;
     finishing.current = true;
-    const secondsUsed = session.seconds ? session.seconds - Math.max(0, left) : Math.round((Date.now() - session.startedAt) / 1000);
+    const secondsUsed = session.seconds && !timerOff ? Math.min(used, session.seconds) : used;
     setDone({ secondsUsed, saving: true });
     window.scrollTo(0, 0);
+    // The attempt is graded now: drop the saved run so a reload can't submit it twice.
+    try { localStorage.removeItem(RUN_PROGRESS_KEY); localStorage.removeItem(RUN_KEY); } catch { /* ignore */ }
+    const title = session.seconds && timerOff ? `${session.title} (sin límite de tiempo)` : session.title;
     let res;
-    try { res = await saveAttempt(data, session.mode, session.title, current, secondsUsed, domainsById); }
+    try { res = await saveAttempt(data, session.mode, title, current, secondsUsed, domainsById); }
     catch (e) { setDone({ secondsUsed, saving: false, saveError: e instanceof Error ? e.message : 'error de conexión' }); return; }
     const seen = new Set(data.seen);
     current.filter(answered).forEach((it) => seen.add(it.q.id));
@@ -44,11 +55,15 @@ export default function Runner() {
   };
 
   useEffect(() => {
-    if (!session?.seconds || done) return;
-    const t = setInterval(() => setLeft((s) => s - 1), 1000);
+    if (done || paused || !session) return;
+    const t = setInterval(() => setUsed((s) => s + 1), 1000);
     return () => clearInterval(t);
-  }, [session?.seconds, done]);
-  useEffect(() => { if (session?.seconds && left <= 0 && !done) finish(items); }, [left]);
+  }, [done, paused, !!session]);
+  useEffect(() => { if (timed && left <= 0 && !done) finish(items); }, [left, timed]);
+  useEffect(() => {
+    if (!session || done) return;
+    try { localStorage.setItem(RUN_PROGRESS_KEY, JSON.stringify({ startedAt: session.startedAt, items, i, used, timerOff })); } catch { /* ignore */ }
+  }, [items, i, timerOff, Math.floor(used / 5), done]);
 
   if (!session || session.examSlug !== slug) return <Navigate to={`/e/${slug}`} replace />;
   if (!data) return <div className="center">Cargando…</div>;
@@ -84,13 +99,36 @@ export default function Runner() {
           <span className="runtitle">{session.title}</span>
           <span className="spacer" />
           <span className="mono muted">{i + 1} / {items.length}</span>
-          {session.seconds > 0 && <span className={`timer ${left < 600 ? 'low' : ''}`} aria-label="Tiempo restante">{clock(left)}</span>}
+          <span className="timerbox">
+            <button className={`timer ${timed && left < 600 ? 'low' : ''} ${paused ? 'paused' : ''}`} aria-haspopup="true" aria-expanded={timerMenu}
+              aria-label={timed ? `Tiempo restante ${clock(left)}. Opciones del temporizador` : `Tiempo dedicado ${clock(used)}. Opciones del temporizador`}
+              onClick={() => setTimerMenu(!timerMenu)}>
+              {paused && <span aria-hidden="true">❚❚ </span>}{timed ? clock(left) : clock(used)}
+            </button>
+            {timerMenu && (
+              <div className="timermenu" role="menu">
+                <button role="menuitem" className="btn small" onClick={() => { setPaused(!paused); setTimerMenu(false); }}>{paused ? 'Reanudar' : 'Pausar'}</button>
+                {!!session.seconds && <button role="menuitem" className="btn small" onClick={() => { setTimerOff(!timerOff); setTimerMenu(false); }}>{timerOff ? 'Volver a la cuenta atrás' : 'Quitar el límite de tiempo'}</button>}
+                <p className="note">{session.seconds ? (timerOff ? 'Sin límite: se guarda el tiempo dedicado, sin contar las pausas.' : 'Al quitar el límite, el resultado se guarda marcado como «sin límite de tiempo».') : 'Las pausas no cuentan en el tiempo dedicado.'}</p>
+              </div>
+            )}
+          </span>
           <button className={`btn small ${quitArmed ? 'solid' : ''}`} onClick={() => {
             if (quitArmed) { setSession(null); nav(`/e/${slug}`); } else { setQuitArmed(true); setTimeout(() => setQuitArmed(false), 3000); }
           }}>{quitArmed ? '¿Salir sin corregir?' : 'Salir'}</button>
         </div>
         <div className="progress"><i style={{ width: `${(answeredCount / items.length) * 100}%` }} /></div>
       </div>
+      {paused ? (
+        <main className="wrap">
+          <section className="panel pausepanel">
+            <div className="eyebrow">Examen en pausa</div>
+            <h2>{session.title}</h2>
+            <p className="note">{answeredCount} de {items.length} respondidas{timed ? ` · quedan ${clock(left)}` : ` · ${clock(used)} dedicados`}. El tiempo está parado y tu avance se guarda en este navegador: puedes cerrar la pestaña y seguir más tarde desde la página del examen.</p>
+            <button className="btn solid" onClick={() => setPaused(false)}>Reanudar</button>
+          </section>
+        </main>
+      ) : (
       <main className="wrap exam-layout">
         <article className={`qcard ${locked ? 'locked' : ''}`}
           onTouchStart={(e) => { const t0 = e.touches[0]; touch.current = { x: t0.clientX, y: t0.clientY }; }}
@@ -181,8 +219,17 @@ export default function Runner() {
           )}
         </aside>
       </main>
+      )}
     </>
   );
+}
+
+function loadProgress(startedAt?: number): { items: Item[]; i: number; used: number; timerOff: boolean } | null {
+  if (!startedAt) return null;
+  try {
+    const p = JSON.parse(localStorage.getItem(RUN_PROGRESS_KEY) || 'null');
+    return p && p.startedAt === startedAt && Array.isArray(p.items) ? p : null;
+  } catch { return null; }
 }
 
 function Results({ items, title, practice, slug, domainsById, done, onBack }: {
