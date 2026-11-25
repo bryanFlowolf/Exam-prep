@@ -86,7 +86,7 @@ export default function App() {
     <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount }}>
       <header className="topbar">
         <div className="wrap">
-          <Link className="brand" to="/"><i className="logo" aria-hidden="true" />Exam Prep</Link>
+          <Link className="brand" to="/"><i className="logo" aria-hidden="true" />WolfPack Academy</Link>
           <span className="spacer" />
           <div className="langsel" role="group" aria-label="Idioma de las preguntas / Question language">
             {LANGS.map((l) => (

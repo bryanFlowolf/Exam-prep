@@ -1,4 +1,4 @@
-# Exam Prep
+# WolfPack Academy
 
 Aplicación para preparar certificaciones: simulacros con el reparto oficial por dominios, práctica con corrección al momento, lista de repaso personal y preguntas escritas por el equipo. Admite varios exámenes (Anthropic, Appian, Salesforce…) y cada persona tiene su progreso guardado en su cuenta.
 

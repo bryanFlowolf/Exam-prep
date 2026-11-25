@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const SENDER_NAME = 'Exam Prep Flowolf';
+const SENDER_NAME = 'WolfPack Academy';
 const RESEND_SECONDS = 60;
 
 function SpamNotice({ strong }: { strong?: boolean }) {
@@ -56,7 +56,7 @@ export default function Login() {
   return (
     <main className="login">
       <div className="hero" style={{ paddingBottom: 8 }}>
-        <div className="eyebrow">Exam Prep</div>
+        <div className="eyebrow">WolfPack Academy</div>
         <h1>Prepara tus certificaciones</h1>
         <p>Simulacros y práctica por dominio, con tu progreso guardado en tu cuenta.</p>
       </div>
