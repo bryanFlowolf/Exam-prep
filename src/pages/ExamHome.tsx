@@ -20,6 +20,8 @@ export default function ExamHome() {
   const [practice, setPractice] = useState<Set<string> | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [dateMsg, setDateMsg] = useState('');
+  const [readyOpen, setReadyOpen] = useState(loadReadyOpen);
+  const toggleReady = () => setReadyOpen((o) => { saveReadyOpen(!o); return !o; });
 
   const stats = useMemo(() => {
     if (!data) return null;
@@ -57,11 +59,21 @@ export default function ExamHome() {
   };
 
   const readinessPanel = () => (
-    <section className="panel ready" aria-labelledby="ready-h">
+    <section className={`panel ready${readyOpen ? '' : ' compact'}`} aria-labelledby="ready-h">
       <div className="ready-head">
-        <h2 id="ready-h">Tu preparación</h2>
+        <button className="ready-toggle" aria-expanded={readyOpen} aria-controls="ready-body" onClick={toggleReady}>
+          <span className="chev" aria-hidden="true">{readyOpen ? '▾' : '▸'}</span>
+          <h2 id="ready-h">Tu preparación</h2>
+        </button>
         <span className={`verdict ${v.cls}`}>{v.text}</span>
       </div>
+      {!readyOpen && (
+        <p className="ready-summary">
+          Nota estimada <b>{pct(r.estimate)}</b> · probabilidad de aprobar <b>{pct(r.probability)}</b> · {r.answered} respuestas
+          {daysLeft !== null && daysLeft >= 0 && <> · examen {daysLeft === 0 ? 'hoy' : daysLeft === 1 ? 'mañana' : `en ${daysLeft} días`}</>}
+        </p>
+      )}
+      {readyOpen && <div id="ready-body">
       <div className="ready-kpis">
         <div><b>{pct(r.estimate)}</b><span>nota estimada · aprobado {pct(r.pass)}</span></div>
         <div><b>{pct(r.probability)}</b><span>probabilidad de aprobar</span></div>
@@ -102,6 +114,7 @@ export default function ExamHome() {
         );
       })}
       <p className="note" style={{ marginTop: 10 }}>Se calcula con tus últimos {READY_WINDOW} intentos de simulacro, mini-examen y práctica por dominio (los repasos y la práctica dirigida no cuentan porque se centran en lo que fallaste). Cada dominio pesa como en el examen oficial y los dominios con pocas respuestas cuentan como un 50 % hasta que tengas datos. Es una orientación, no una garantía.</p>
+      </div>}
     </section>
   );
 
@@ -213,4 +226,13 @@ export default function ExamHome() {
       </section>
     </main>
   );
+}
+
+/** Whether "Tu preparación" is expanded; one preference for every exam, kept in this browser. */
+const READY_KEY = 'exam-prep-readiness-open';
+function loadReadyOpen(): boolean {
+  try { return localStorage.getItem(READY_KEY) !== '0'; } catch { return true; }
+}
+function saveReadyOpen(open: boolean) {
+  try { localStorage.setItem(READY_KEY, open ? '1' : '0'); } catch { /* private window: keep it for this visit only */ }
 }

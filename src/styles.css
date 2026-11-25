@@ -323,3 +323,12 @@ input[type=text]:not(.form *) { font: inherit; color: var(--ink); background: va
 .reg-steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
 .reg-steps li::before { content: counter(s); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 13px var(--f-mono); }
 .reg-notes { margin: 14px 0 0; padding: 10px 14px 10px 30px; background: var(--sunk); border-radius: 8px; font-size: 14px; max-width: 78ch; display: grid; gap: 4px; }
+
+/* Collapsible "Tu preparación" panel */
+.ready-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.ready-toggle h2 { margin: 0; }
+.ready-toggle .chev { width: 18px; color: var(--muted); font-size: 18px; }
+.ready-toggle:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 3px; border-radius: 4px; }
+.ready.compact .ready-head { margin-bottom: 4px; }
+.ready-summary { margin: 0; color: var(--muted); font-size: 14px; }
+.ready-summary b { color: var(--ink, inherit); font-family: var(--mono, inherit); }
