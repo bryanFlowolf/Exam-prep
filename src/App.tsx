@@ -16,6 +16,7 @@ import Account from './pages/Account';
 import AdminQuality from './pages/AdminQuality';
 import AdminTeams from './pages/AdminTeams';
 import Teams from './pages/Teams';
+import Registration from './pages/Registration';
 
 type Ctx = {
   userId: string;
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="/admin/calidad" element={<AdminQuality />} />
         <Route path="/admin/equipos" element={<AdminTeams />} />
         <Route path="/equipos" element={<Teams />} />
+        <Route path="/registro" element={<Registration />} />
         <Route path="/cuenta" element={<Account />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

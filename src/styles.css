@@ -311,3 +311,15 @@ input[type=text]:not(.form *) { font: inherit; color: var(--ink); background: va
   .opt:hover { background: var(--surface); }
   .opt.sel:hover { background: var(--accent-soft); }
 }
+
+/* ---------- Guía de registro ---------- */
+.reg { scroll-margin-top: 70px; }
+.reg-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.reg-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; margin: 12px 0 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.reg-facts > div { padding: 10px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; }
+.reg-facts dt { font: 600 11.5px var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.reg-facts dd { margin: 4px 0 0; font-size: 14.5px; }
+.reg-steps { margin: 16px 0 0; padding-left: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; max-width: 78ch; }
+.reg-steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+.reg-steps li::before { content: counter(s); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 13px var(--f-mono); }
+.reg-notes { margin: 14px 0 0; padding: 10px 14px 10px 30px; background: var(--sunk); border-radius: 8px; font-size: 14px; max-width: 78ch; display: grid; gap: 4px; }

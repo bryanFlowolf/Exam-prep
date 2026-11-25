@@ -30,6 +30,7 @@ export default function Home() {
         <div className="eyebrow">Hola{profile?.display_name ? `, ${profile.display_name}` : ''}</div>
         <h1>Elige un examen</h1>
         <p>Cada examen tiene simulacros con el reparto oficial por dominios, práctica con corrección al momento, tu lista de repaso y preguntas escritas por el equipo.</p>
+        <p style={{ marginTop: 8 }}><Link to="/registro">Cómo registrarte en el examen oficial de cada fabricante →</Link></p>
       </header>
       {error && <div className="msg err">{error}</div>}
       {!exams && !error && <div className="center">Cargando exámenes…</div>}

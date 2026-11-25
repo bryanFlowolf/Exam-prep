@@ -5,6 +5,7 @@ import { useExam } from '../lib/useExam';
 import { buildExam, fmtDate, freshFirst, shuffle, toItem } from '../lib/exam';
 import { resetSeen, saveTargetDate } from '../lib/data';
 import type { Mode, Question } from '../lib/types';
+import { guideFor } from '../lib/registration';
 import { MIN_ANSWERS, READY_WINDOW, pct, readiness, recentTotals, targetedPool, verdict, weakestDomains } from '../lib/readiness';
 
 const MODE_LABEL: Record<Mode, string> = {
@@ -119,6 +120,7 @@ export default function ExamHome() {
           <div><b>{stats.unseen}</b><span>sin ver todavía</span></div>
         </div>
         <p className="note">Tu progreso se guarda en tu cuenta y solo lo ves tú. Cada modo te muestra primero las preguntas que aún no has respondido.</p>
+        {guideFor(exam.vendor) && <p className="note"><Link to={`/registro#${exam.vendor.toLowerCase()}`}>Cómo registrarte en el examen oficial de {guideFor(exam.vendor)!.label} →</Link></p>}
       </header>
 
       {readinessPanel()}
