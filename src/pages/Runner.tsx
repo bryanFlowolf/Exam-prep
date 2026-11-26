@@ -1,3 +1,5 @@
+import { SCORING } from '../lib/examInfo';
+import ScoringInfo from '../components/ScoringInfo';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMedia } from '../lib/useMedia';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -251,6 +253,7 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
     byD[d.id].total++;
     if (isRight(x)) byD[d.id].ok++;
   }
+  const scoring = data?.exam ? SCORING[data.exam.vendor] : undefined;
   const v = pct >= 80 ? ['pass', 'Listo: por encima del objetivo del 80%'] : pct >= 72 ? ['edge', 'En la zona del aprobado, sin margen'] : ['fail', 'Por debajo del aprobado estimado'];
   const list = graded.filter((x) => !onlyWrong || !isRight(x));
 
@@ -264,7 +267,10 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
         <div>
           <div className="eyebrow">{title}</div>
           <span className={`verdict ${v[0]}`}>{v[1]}</span>
-          <p className="note">Referencia práctica: apunta al 80% en el total y a no bajar del 65% en ningún dominio (línea vertical en las barras). {done.saving ? 'Guardando el resultado…' : done.saveError ? '' : 'Resultado guardado en tu cuenta.'}</p>
+          <p className="note">{scoring
+            ? 'Referencia práctica: apunta al 80% de aciertos. En el examen real solo cuenta la nota total escalada (aprobado 720/1.000); los porcentajes por dominio son orientativos.'
+            : 'Referencia práctica: apunta al 80% en el total y a no bajar del 65% en ningún dominio (línea vertical en las barras).'} {done.saving ? 'Guardando el resultado…' : done.saveError ? '' : 'Resultado guardado en tu cuenta.'}</p>
+          {scoring && <ScoringInfo s={scoring} />}
           {done.saveError && <div className="msg err" style={{ marginTop: 8 }}>No se ha podido guardar todo el resultado: {done.saveError}</div>}
         </div>
       </section>

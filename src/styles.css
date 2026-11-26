@@ -342,3 +342,7 @@ input[type=text]:not(.form *) { font: inherit; color: var(--ink); background: va
 .ready.compact .ready-head { margin-bottom: 4px; }
 .ready-summary { margin: 0; color: var(--muted); font-size: 14px; }
 .ready-summary b { color: var(--ink, inherit); font-family: var(--mono, inherit); }
+.scoring { margin: 10px 0 4px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--surface); }
+.scoring summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.scoring ul { margin: 8px 0 2px; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.scoring li + li { margin-top: 4px; }

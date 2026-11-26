@@ -1,3 +1,5 @@
+import { OFFICIAL_GUIDES, SCORING } from '../lib/examInfo';
+import ScoringInfo from '../components/ScoringInfo';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../App';
@@ -142,6 +144,13 @@ export default function ExamHome() {
           </div>
         )}
         <p className="note">Tu progreso se guarda en tu cuenta y solo lo ves tú. Cada modo te muestra primero las preguntas que aún no has respondido.</p>
+        {OFFICIAL_GUIDES[exam.slug] && (
+          <p className="note">
+            <a href={OFFICIAL_GUIDES[exam.slug].url} target="_blank" rel="noopener noreferrer">{OFFICIAL_GUIDES[exam.slug].label} ↗</a>
+            {OFFICIAL_GUIDES[exam.slug].note && <> · {OFFICIAL_GUIDES[exam.slug].note}</>}
+          </p>
+        )}
+        {SCORING[exam.vendor] && <ScoringInfo s={SCORING[exam.vendor]} />}
         {guideFor(exam.vendor) && <p className="note"><Link to={`/registro#${exam.vendor.toLowerCase()}`}>Cómo registrarte en el examen oficial de {guideFor(exam.vendor)!.label} →</Link></p>}
       </header>
 
