@@ -12,6 +12,7 @@ import { saveAttempt } from '../lib/data';
 import type { Domain, Item, Scenario } from '../lib/types';
 import { QL, qText, scText } from '../lib/lang';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
+import Stem from '../components/Stem';
 
 export default function Runner() {
   const { slug = '' } = useParams();
@@ -162,7 +163,7 @@ export default function Runner() {
             {multi && <span className="tag multi">{L.choose(it.q.correct.length)}</span>}
             {t.missing && <span className="tag">{L.missing}</span>}
           </div>
-          <p className="qtext">{t.stem}</p>
+          <Stem text={t.stem} />
           {!locked && <p className="note" style={{ margin: '0 0 8px' }}>{L.strikeHint}</p>}
           <div className="opts" role={multi ? 'group' : 'radiogroup'}>
             {it.order.map((oi, k) => {
@@ -351,7 +352,7 @@ function Results({ items, title, practice, slug, domainsById, scenarios, done, o
               {x.q.scenario && scenarios[x.q.scenario] && (k === 0 || graded[k - 1]?.q.scenario !== x.q.scenario || onlyWrong) && (
                 <ScenarioPane scenario={scenarios[x.q.scenario]} lang={lang} collapsible defaultOpen={false} />
               )}
-              <p className="qtext">{xt.stem}</p>
+              <Stem text={xt.stem} />
               <ul>{x.order.map((oi, j) => <li key={j} className={x.correct.includes(j) ? 'c' : x.pick.includes(j) ? 'x' : ''}>{LETTERS[j]}. {xt.options[oi]}</li>)}</ul>
               {xt.explanation && <div className="expl">{xt.explanation}</div>}
               <StatLine stat={data?.stats.get(x.q.id)} lang={lang} />

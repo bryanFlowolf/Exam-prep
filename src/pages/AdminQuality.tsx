@@ -7,6 +7,7 @@ import { QL } from '../lib/lang';
 import type { Domain, Exam, Question, QuestionReport, QuestionStat } from '../lib/types';
 import { MIN_STAT } from '../components/QuestionExtras';
 import { AdminTabs } from './Admin';
+import Stem from '../components/Stem';
 
 const REASON = QL.es.reasons;
 
@@ -73,7 +74,7 @@ function Reports() {
               {r.comment && <p className="quote">“{r.comment}”</p>}
               {q ? (
                 <>
-                  <p className="qtext">{q.stem}</p>
+                  <Stem text={q.stem} />
                   <ul>{q.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}{tr ? <span className="muted"> · {tr.options[i]}</span> : null}</li>)}</ul>
                   {tr && <p className="note" style={{ marginTop: 6 }}>{tr.stem}</p>}
                   {q.explanation && <div className="expl">{q.explanation}</div>}

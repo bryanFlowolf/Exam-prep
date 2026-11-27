@@ -6,6 +6,7 @@ import { LETTERS, fmtDate } from '../lib/exam';
 import { deleteQuestion, saveTeamQuestion } from '../lib/data';
 import type { Question } from '../lib/types';
 import { QL, qText } from '../lib/lang';
+import Stem from '../components/Stem';
 
 type Draft = { domain_id: string; stem: string; options: string[]; correct: boolean[]; explanation: string; ok: boolean };
 
@@ -127,7 +128,7 @@ export default function Team() {
                 {t.missing && <span className="tag">{QL[lang].missing}</span>}
                 <span className="tag">{fmtDate(q.created_at)}</span>
               </div>
-              <p className="qtext">{t.stem}</p>
+              <Stem text={t.stem} />
               <ul>{t.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
               {t.explanation && <div className="expl">{t.explanation}</div>}
               {(mine || profile?.is_admin) && (

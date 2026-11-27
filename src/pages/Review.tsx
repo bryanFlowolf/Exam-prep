@@ -8,6 +8,7 @@ import { QL, qText } from '../lib/lang';
 import Tutor from '../components/Tutor';
 import ScenarioPane from '../components/ScenarioPane';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
+import Stem from '../components/Stem';
 
 type Filter = 'all' | 'wrong' | 'flag';
 
@@ -75,7 +76,7 @@ export default function Review() {
             </div>
             {t.missing && <div className="qhead"><span className="tag">{L.missing}</span></div>}
             {q.scenario && scenarios[q.scenario] && <ScenarioPane scenario={scenarios[q.scenario]} lang={lang} collapsible defaultOpen={false} />}
-            <p className="qtext">{t.stem}</p>
+            <Stem text={t.stem} />
             <ul>{t.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
             {r.last_result === 'fallada' && r.last_pick.length > 0 && (
               <p style={{ fontSize: 13.5, margin: '8px 0 0', color: 'var(--bad)' }}>{L.yourAnswer}: {r.last_pick.map((i) => t.options[i]).filter(Boolean).join(' / ')}</p>
