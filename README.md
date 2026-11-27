@@ -145,10 +145,10 @@ En la corrección de cada pregunta, en los resultados y en la lista de repaso ha
 
 **Activarlo** (necesita la migración `20261127000000_training.sql`):
 
-1. En AWS, habilita el acceso al modelo de Claude en Bedrock y anota la región y el **ID del modelo o del perfil de inferencia** (por ejemplo `eu.anthropic.claude-sonnet-4-5-20250929-v1:0`).
+1. En AWS, habilita el acceso al modelo de Claude en Bedrock y anota la región y el **ID del modelo o del perfil de inferencia** (por ejemplo `eu.anthropic.claude-haiku-4-5-20251001-v1:0`, el que usa floWolf).
 2. Guarda los secretos en Supabase (*Edge Functions → Secrets*, o con la CLI):
    ```bash
-   npx supabase secrets set --project-ref <ref> BEDROCK_REGION=eu-west-1 BEDROCK_MODEL_ID=<id-del-modelo>
+   npx supabase secrets set --project-ref <ref> BEDROCK_REGION=eu-west-1 BEDROCK_MODEL_ID=eu.anthropic.claude-haiku-4-5-20251001-v1:0
    # Con una clave de API de Bedrock:
    npx supabase secrets set --project-ref <ref> BEDROCK_API_KEY=<clave>
    # O con credenciales IAM (permiso bedrock:InvokeModel sobre ese modelo):
