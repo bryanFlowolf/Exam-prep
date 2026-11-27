@@ -1,5 +1,6 @@
 import { SCORING } from '../lib/examInfo';
 import ScoringInfo from '../components/ScoringInfo';
+import Tutor from '../components/Tutor';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMedia } from '../lib/useMedia';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -178,6 +179,7 @@ export default function Runner() {
               <div className="expl"><b>{isRight(it) ? L.correct : L.incorrect}</b> {L.answer}: {it.correct.map((k) => LETTERS[k]).join(', ')}. {t.explanation}</div>
               <StatLine stat={data.stats.get(it.q.id)} lang={lang} />
               <DocLinks domain={domainsById[it.q.domain_id]} lang={lang} />
+              <Tutor key={it.q.id} questionId={it.q.id} order={it.order} picked={it.pick.map((k) => it.order[k])} lang={lang} />
             </>
           )}
           <div className="qfoot"><ReportButton key={it.q.id} questionId={it.q.id} lang={lang} reported={data.reported.has(it.q.id)} onReported={() => markReported(it.q.id)} /></div>
@@ -312,6 +314,7 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
               {xt.explanation && <div className="expl">{xt.explanation}</div>}
               <StatLine stat={data?.stats.get(x.q.id)} lang={lang} />
               <DocLinks domain={domainsById[x.q.domain_id]} lang={lang} />
+              <Tutor questionId={x.q.id} order={x.order} picked={x.pick.map((k) => x.order[k])} lang={lang} />
               <div className="qfoot"><ReportButton questionId={x.q.id} lang={lang} reported={!!data?.reported.has(x.q.id)} onReported={() => update((d) => ({ ...d, reported: new Set(d.reported).add(x.q.id) }))} /></div>
             </article>
           );

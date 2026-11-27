@@ -5,6 +5,7 @@ import { useExam } from '../lib/useExam';
 import { LETTERS, fmtDate, shuffle, toItem } from '../lib/exam';
 import { removeReview } from '../lib/data';
 import { QL, qText } from '../lib/lang';
+import Tutor from '../components/Tutor';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 
 type Filter = 'all' | 'wrong' | 'flag';
@@ -79,6 +80,7 @@ export default function Review() {
             {t.explanation && <div className="expl">{t.explanation}</div>}
             <StatLine stat={data.stats.get(q.id)} lang={lang} />
             <DocLinks domain={domains[q.domain_id]} lang={lang} />
+            <Tutor questionId={q.id} picked={r.last_result === 'fallada' ? r.last_pick : []} lang={lang} />
             <div className="row" style={{ marginTop: 10 }}>
               <button className={`btn small ${armed === q.id ? 'solid' : ''}`} onClick={() => remove(q.id)}>{armed === q.id ? 'Confirmar: quitar' : 'Quitar de la lista'}</button>
               <span className="spacer" />
