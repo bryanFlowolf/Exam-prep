@@ -103,7 +103,7 @@ export type Attempt = {
 
 export type Mode = 'sim' | 'mini' | 'practice' | 'review' | 'team' | 'last_wrong' | 'targeted';
 
-export type Profile = { id: string; display_name: string; is_admin: boolean };
+export type Profile = { id: string; display_name: string; is_admin: boolean; /** Training editor (training migration). */ is_editor?: boolean };
 
 /** One question inside a running session, with its options shuffled for display. */
 export type Item = {

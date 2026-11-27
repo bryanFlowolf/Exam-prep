@@ -5,7 +5,7 @@ import type { Exam } from '../lib/types';
 import { useApp } from '../App';
 
 export default function Home() {
-  const { profile } = useApp();
+  const { profile, pending } = useApp();
   const [exams, setExams] = useState<(Exam & { question_count: number })[] | null>(null);
   const [error, setError] = useState('');
 
@@ -32,6 +32,12 @@ export default function Home() {
         <p>Cada examen tiene simulacros con el reparto oficial por dominios, práctica con corrección al momento, tu lista de repaso y preguntas escritas por el equipo.</p>
         <p style={{ marginTop: 8 }}><Link to="/registro">Cómo registrarte en el examen oficial de cada fabricante →</Link></p>
       </header>
+      {pending > 0 && (
+        <Link to="/formacion" className="todo-banner">
+          <b>{pending === 1 ? 'Tienes 1 formación asignada pendiente.' : `Tienes ${pending} formaciones asignadas pendientes.`}</b>
+          <span>Ver mis formaciones →</span>
+        </Link>
+      )}
       {error && <div className="msg err">{error}</div>}
       {!exams && !error && <div className="center">Cargando exámenes…</div>}
       {exams && exams.length === 0 && (

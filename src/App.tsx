@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import type { Session as AuthSession } from '@supabase/supabase-js';
 import { configured, supabase } from './lib/supabase';
 import { getMyProfile, myTeamCount } from './lib/data';
+import { myTraining } from './lib/training';
 import type { Profile, Session } from './lib/types';
 import { LANGS, loadLang, saveLang, type Lang } from './lib/lang';
 import Login from './pages/Login';
@@ -17,6 +18,11 @@ import AdminQuality from './pages/AdminQuality';
 import AdminTeams from './pages/AdminTeams';
 import Teams from './pages/Teams';
 import Registration from './pages/Registration';
+import Training from './pages/Training';
+import Course from './pages/Course';
+import Certificate from './pages/Certificate';
+import TrainingAdmin from './pages/TrainingAdmin';
+import CourseEditor from './pages/CourseEditor';
 
 type Ctx = {
   userId: string;
@@ -26,6 +32,9 @@ type Ctx = {
   setSession: (s: Session | null) => void;
   lang: Lang;
   teamCount: number;
+  /** Assigned trainings not completed (for the header badge). */
+  pending: number;
+  setPending: (n: number) => void;
 };
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -54,6 +63,7 @@ export default function App() {
   const setSession = (s: Session | null) => { setSessionState(s); saveRun(s, auth?.user.id); };
   const [lang, setLangState] = useState<Lang>(loadLang);
   const [teamCount, setTeamCount] = useState(0);
+  const [pending, setPending] = useState(0);
   const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
 
   useEffect(() => {
@@ -68,7 +78,8 @@ export default function App() {
       const run = loadRun();
       if (run && run.uid !== auth.user.id) { setSessionState(null); saveRun(null); }
     }
-    if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); } else { setProfile(null); setTeamCount(0); }
+    if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); myTraining().then((m) => setPending(m.filter((x) => x.state !== 'completado').length)).catch(() => setPending(0)); }
+    else { setProfile(null); setTeamCount(0); setPending(0); }
   }, [auth?.user.id]);
 
   if (!configured) {
@@ -83,7 +94,7 @@ export default function App() {
   if (!auth) return <Login />;
 
   return (
-    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount }}>
+    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount, pending, setPending }}>
       <header className="topbar">
         <div className="wrap">
           <Link className="brand" to="/"><i className="logo" aria-hidden="true" />WolfPack Academy</Link>
@@ -93,6 +104,7 @@ export default function App() {
               <button key={l.code} type="button" aria-pressed={lang === l.code} title={l.name} onClick={() => setLang(l.code)}>{l.label}</button>
             ))}
           </div>
+          <Link className="btn small" to="/formacion">Formación{pending > 0 && <span className="badge" aria-label={`${pending} pendientes`}>{pending}</span>}</Link>
           {(teamCount > 0 || profile?.is_admin) && <Link className="btn small hide-sm" to="/equipos">Equipos</Link>}
           {profile?.is_admin && <Link className="btn small hide-sm" to="/admin">Administración</Link>}
           <Link className="btn small" to="/cuenta">{profile?.display_name || 'Mi cuenta'}</Link>
@@ -110,6 +122,11 @@ export default function App() {
         <Route path="/equipos" element={<Teams />} />
         <Route path="/registro" element={<Registration />} />
         <Route path="/cuenta" element={<Account />} />
+        <Route path="/formacion" element={<Training />} />
+        <Route path="/formacion/gestion" element={<TrainingAdmin />} />
+        <Route path="/formacion/gestion/:id" element={<CourseEditor />} />
+        <Route path="/formacion/certificado/:id" element={<Certificate />} />
+        <Route path="/formacion/:id" element={<Course />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppCtx.Provider>

@@ -19,7 +19,12 @@ Aplicación para preparar certificaciones: simulacros con el reparto oficial por
 | Reportes de preguntas | Quien lo envía y los administradores (que ven su nombre) |
 | Progreso compartido con un equipo | Solo los **responsables** de ese equipo, y solo de los miembros que activan "compartir mi progreso" en *Mis equipos*. Es un resumen por examen (nota estimada, probabilidad, respuestas, última actividad, último simulacro, fecha de examen), nunca preguntas ni respuestas. Ser administrador no da acceso |
 
-Los emails solo están en el sistema de autenticación de Supabase, no en las tablas de la aplicación.
+| Cursos internos y sus lecciones | Todos los usuarios con sesión (los publicados); los editores de formación ven también los borradores |
+| Preguntas del test de un curso (con su respuesta) | Solo administradores y editores de formación. El test se reparte y se corrige en el servidor |
+| Avance en lecciones, intentos de test, certificados y firmas de conformidad | Su dueño, y los administradores y editores de formación (es la evidencia de la formación obligatoria) |
+| Consultas al tutor IA | Nadie: no se guardan. Solo se cuenta cuántas hace cada persona al día para aplicar el límite |
+
+Los emails están en el sistema de autenticación de Supabase. Como excepción, cada registro de formación completada guarda una copia del nombre y el email de la persona en el momento de completarla, para que la evidencia se conserve aunque la cuenta se borre.
 
 ## Despliegue (unos 20 minutos)
 
@@ -31,7 +36,8 @@ Los emails solo están en el sistema de autenticación de Supabase, no en las ta
    - `supabase/migrations/20261119000100_grants.sql` (permisos de tabla; los proyectos nuevos de Supabase no los conceden solos).
    - `supabase/migrations/20261119000200_keepalive.sql` (función mínima para evitar la pausa por inactividad del plan gratuito).
    - `supabase/migrations/20261123000000_i18n.sql` (traducciones de las preguntas).
-   - `supabase/migrations/20261124000000_insights.sql` (panel de preparación, reportes y estadísticas de preguntas, equipos y enlaces de documentación).
+   - `supabase/migrations/20261124000000_insights.sql` (panel de preparación, reportes y estadísticas de preguntas, equipos y enlaces de documentación);
+   - `supabase/migrations/20261127000000_training.sql` (formación interna y límite del tutor IA).
 3. En **SQL Editor**, ejecuta `supabase/seed.sql` para cargar el examen CCDV-F.
 4. En **Authentication → URL Configuration**:
    - **Site URL:** la URL de Vercel (por ejemplo `https://exam-prep.vercel.app`).
@@ -116,6 +122,40 @@ Crea un JSON con este formato (ver `content/exams/anthropic-ccdv-f.json`) y súb
 - **Para saber más:** cada dominio tiene enlaces a la documentación oficial (campo `docs` de cada dominio en `content/exams/*.json`; para un proyecto ya desplegado, `supabase/content-updates/20261124_enlaces_documentacion.sql`).
 - **Móvil:** en pantallas pequeñas los botones del examen quedan fijos abajo, la navegación se pliega y se puede deslizar a izquierda o derecha para cambiar de pregunta. La app se puede instalar en la pantalla de inicio (`public/manifest.webmanifest`).
 
+## Formación interna
+
+Además de las certificaciones, la app centraliza la formación de la empresa (prevención de riesgos laborales, onboarding, tecnologías, cumplimiento…). Requiere la migración `supabase/migrations/20261127000000_training.sql`.
+
+- **Roles:** los administradores pueden nombrar **editores de formación** en *Administración → Personas registradas*. Un editor crea cursos, asigna y consulta el cumplimiento, sin acceso al resto de la administración.
+- **Cursos** (*Formación → Gestionar cursos*): lecciones de texto, vídeo (YouTube, Vimeo o archivo subido), PDF (enlace o archivo) o enlace externo, y un test final con nota de aprobado. Opcionalmente, una muestra aleatoria de preguntas por intento, caducidad del certificado (p. ej. 12 meses para renovar cada año) y **firma de conformidad**: al aprobar, la persona acepta una declaración y queda registrada con fecha y hora.
+- **Asignaciones:** a personas o equipos, con fecha límite opcional. Asignar a un equipo incluye a quien entre más tarde. Cada persona ve sus formaciones pendientes en *Formación*, con un contador en la cabecera y un aviso en la portada.
+- **Cumplimiento:** por curso, quién la tiene completada, pendiente, vencida (pasada la fecha límite) o caducada (hay que renovarla), con nota, firma y certificado. Se exporta a CSV para RR. HH. o auditorías.
+- **Certificado:** página imprimible con nombre, curso, fecha, nota, caducidad, código y declaración firmada; se guarda en PDF desde el navegador.
+- **Evidencia:** los intentos y firmas no se pueden modificar ni borrar desde la app, y un curso que alguien ya ha hecho no se puede borrar (solo despublicar).
+- **Archivos:** se guardan en el bucket privado `training` de Supabase Storage (lo crea la migración); solo se pueden abrir con sesión iniciada. Límite de 50 MB por archivo en la app; para vídeos largos, usa un enlace a vuestra plataforma de vídeo.
+- **Pendiente:** los avisos por email de fecha límite y caducidad. Por ahora los avisos se ven dentro de la app.
+
+## Tutor IA (Claude en Amazon Bedrock)
+
+En la corrección de cada pregunta, en los resultados y en la lista de repaso hay un botón **«Explícamelo con IA»**. Claude explica por qué la respuesta elegida es incorrecta y la correcta es correcta, con la explicación oficial y la documentación del dominio, y admite preguntas de seguimiento.
+
+- La llamada la hace la función de Supabase `supabase/functions/tutor`. La pregunta y su respuesta se leen de la base de datos (no del navegador) y las credenciales nunca llegan a la app.
+- No se guardan las conversaciones. Hay un límite diario por persona (60 consultas por defecto, variable `TUTOR_DAILY_LIMIT`).
+- Hasta que se configure, el botón indica que el tutor no está activado.
+
+**Activarlo** (necesita la migración `20261127000000_training.sql`):
+
+1. En AWS, habilita el acceso al modelo de Claude en Bedrock y anota la región y el **ID del modelo o del perfil de inferencia** (por ejemplo `eu.anthropic.claude-sonnet-4-5-20250929-v1:0`).
+2. Guarda los secretos en Supabase (*Edge Functions → Secrets*, o con la CLI):
+   ```bash
+   npx supabase secrets set --project-ref <ref> BEDROCK_REGION=eu-west-1 BEDROCK_MODEL_ID=<id-del-modelo>
+   # Con una clave de API de Bedrock:
+   npx supabase secrets set --project-ref <ref> BEDROCK_API_KEY=<clave>
+   # O con credenciales IAM (permiso bedrock:InvokeModel sobre ese modelo):
+   npx supabase secrets set --project-ref <ref> AWS_ACCESS_KEY_ID=<id> AWS_SECRET_ACCESS_KEY=<secreto>
+   ```
+3. Despliega la función: `npx supabase functions deploy tutor --project-ref <ref>` (o créala en *Edge Functions* del panel con los dos archivos de `supabase/functions/tutor`).
+
 ## Desarrollo
 
 ```bash
@@ -130,7 +170,7 @@ npm run dev
   ```bash
   psql -d prueba -f supabase/tests/mock_supabase.sql -f supabase/migrations/20261119000000_init.sql -f supabase/migrations/20261119000100_grants.sql -f supabase/seed.sql
   psql -d prueba -f supabase/tests/rls_test.sql   # todas las líneas deben decir OK
-  psql -d prueba -f supabase/migrations/20261123000000_i18n.sql -f supabase/migrations/20261124000000_insights.sql
+  psql -d prueba -f supabase/migrations/20261123000000_i18n.sql -f supabase/migrations/20261124000000_insights.sql -f supabase/migrations/20261127000000_training.sql
   psql -d prueba -f supabase/tests/insights_test.sql   # reportes, estadísticas anónimas y privacidad de los equipos
   ```
 - **Interfaz sin backend:** `npx vite --config test/vite.mock.config.ts` arranca la app con un Supabase simulado en memoria.

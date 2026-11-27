@@ -3,6 +3,7 @@ import { NavLink, Navigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { addAllow, importExam, listAllowlist, listExams, listProfiles, removeAllow, setAdmin, setExamPublished } from '../lib/data';
 import type { Exam, Profile } from '../lib/types';
+import { setEditor } from '../lib/training';
 
 function validate(p: any): string | null {
   if (!p || typeof p !== 'object') return 'El fichero no contiene un objeto JSON.';
@@ -28,6 +29,7 @@ export function AdminTabs() {
       <NavLink to="/admin" end>General</NavLink>
       <NavLink to="/admin/calidad">Calidad del banco</NavLink>
       <NavLink to="/admin/equipos">Equipos</NavLink>
+      <NavLink to="/formacion/gestion">Formación</NavLink>
     </nav>
   );
 }
@@ -121,7 +123,7 @@ export default function Admin() {
         <div className="eyebrow" style={{ marginBottom: 8 }}>Personas registradas</div>
         <div className="table-wrap">
           <table className="simple">
-            <thead><tr><th>Nombre</th><th>Rol</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Rol</th><th>Formación</th></tr></thead>
             <tbody>
               {people.map((p) => (
                 <tr key={p.id}>
@@ -129,6 +131,11 @@ export default function Admin() {
                   <td>{p.id === userId ? 'Administrador' : (
                     <button className="btn small" onClick={async () => { try { await setAdmin(p.id, !p.is_admin); load(); } catch { setMsg({ ok: false, text: 'No se ha podido cambiar el rol.' }); } }}>
                       {p.is_admin ? 'Administrador · quitar' : 'Usuario · hacer administrador'}
+                    </button>
+                  )}</td>
+                  <td>{p.is_admin ? <span className="note">Incluida como administrador</span> : (
+                    <button className="btn small" onClick={async () => { try { await setEditor(p.id, !p.is_editor); load(); } catch { setMsg({ ok: false, text: 'No se ha podido cambiar el rol. ¿Está aplicada la migración de formación?' }); } }}>
+                      {p.is_editor ? 'Editor de formación · quitar' : 'Hacer editor de formación'}
                     </button>
                   )}</td>
                 </tr>

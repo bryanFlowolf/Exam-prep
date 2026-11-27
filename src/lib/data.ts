@@ -18,7 +18,7 @@ async function all<T>(build: (from: number, to: number) => PromiseLike<{ data: T
 export async function getMyProfile(): Promise<Profile | null> {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return null;
-  const { data, error } = await supabase.from('profiles').select('id, display_name, is_admin').eq('id', u.user.id).maybeSingle();
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', u.user.id).maybeSingle();
   if (error) throw error;
   return data as Profile | null;
 }
@@ -217,7 +217,7 @@ export async function removeAllow(pattern: string) {
 }
 
 export async function listProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase.from('profiles').select('id, display_name, is_admin').order('display_name');
+  const { data, error } = await supabase.from('profiles').select('*').order('display_name');
   if (error) throw error;
   return (data || []) as Profile[];
 }

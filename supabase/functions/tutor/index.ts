@@ -3,7 +3,7 @@
 // Secrets (supabase secrets set …): BEDROCK_REGION, BEDROCK_MODEL_ID and either BEDROCK_API_KEY
 // or AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (+ AWS_SESSION_TOKEN). Optional: TUTOR_DAILY_LIMIT.
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
-import { bedrockConfigured, converse, type BedrockConfig, type ChatMessage } from '../_shared/bedrock.ts';
+import { bedrockConfigured, converse, type BedrockConfig, type ChatMessage } from './bedrock.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
