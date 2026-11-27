@@ -41,12 +41,14 @@ export default function Tutor({ questionId, order, picked, lang }: { questionId:
         body: { question_id: questionId, order, picked, lang, messages: history },
       });
       if (error) {
-        let status = 0, body: { error?: string; limit?: number } = {};
+        let status = 0, body: { error?: string; limit?: number; detail?: string; message?: string; msg?: string } = {};
         if (error instanceof FunctionsHttpError) {
           status = error.context.status;
           try { body = await error.context.json(); } catch { /* not json */ }
         }
-        setErr(status === 503 && body.error === 'not_configured' ? L.off : status === 429 ? L.limit(body.limit || 0) : L.fail);
+        // Technical detail (status, code, provider message) so the cause can be diagnosed; never contains credentials.
+        const tech = [status ? `HTTP ${status}` : error.name, body.error, body.detail || body.message || body.msg || (status ? '' : error.message)].filter(Boolean).join(' · ');
+        setErr(status === 503 && body.error === 'not_configured' ? L.off : status === 429 ? L.limit(body.limit || 0) : `${L.fail} (${tech})`);
         return false;
       }
       setMsgs([...history, { role: 'assistant', content: String(data?.answer || '').trim() || '…' }]);
@@ -88,7 +90,7 @@ export default function Tutor({ questionId, order, picked, lang }: { questionId:
         {err && (
           <div className="msg err">
             {err}{' '}
-            {!msgs.length && err === L.fail && <button type="button" className="linkbtn" onClick={() => call([])}>{L.retry}</button>}
+            {!msgs.length && err.startsWith(L.fail) && <button type="button" className="linkbtn" onClick={() => call([])}>{L.retry}</button>}
           </div>
         )}
       </div>
