@@ -1,6 +1,7 @@
 import { SCORING } from '../lib/examInfo';
 import ScoringInfo from '../components/ScoringInfo';
 import Tutor from '../components/Tutor';
+import ScenarioPane from '../components/ScenarioPane';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMedia } from '../lib/useMedia';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -8,8 +9,8 @@ import { RUN_KEY, RUN_PROGRESS_KEY, useApp } from '../App';
 import { useExam } from '../lib/useExam';
 import { LETTERS, answered, clock, isRight } from '../lib/exam';
 import { saveAttempt } from '../lib/data';
-import type { Domain, Item } from '../lib/types';
-import { QL, qText } from '../lib/lang';
+import type { Domain, Item, Scenario } from '../lib/types';
+import { QL, qText, scText } from '../lib/lang';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 
 export default function Runner() {
@@ -38,6 +39,9 @@ export default function Runner() {
   const practice = session ? !['sim', 'mini'].includes(session.mode) : false;
 
   const domainsById = useMemo(() => Object.fromEntries((data?.domains || []).map((d) => [d.id, d])) as Record<string, Domain>, [data]);
+  const scenarios = useMemo(() => Object.fromEntries((data?.exam.scenarios || []).map((s) => [s.code, s])) as Record<string, Scenario>, [data]);
+  // Scenarios in the order they appear in this run (for "Scenario 2 of 4").
+  const runScenarios = useMemo(() => [...new Set(items.map((x) => x.q.scenario).filter((c): c is string => !!c && !!scenarios[c]))], [items, scenarios]);
 
   const finish = async (current: Item[]) => {
     if (!session || !data || finishing.current) return;
@@ -57,6 +61,7 @@ export default function Runner() {
     setDone({ secondsUsed, saving: false, saveError: res.error });
   };
 
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   useEffect(() => {
     if (done || paused || !session) return;
     const t = setInterval(() => setUsed((s) => s + 1), 1000);
@@ -70,10 +75,13 @@ export default function Runner() {
 
   if (!session || session.examSlug !== slug) return <Navigate to={`/e/${slug}`} replace />;
   if (!data) return <div className="center">Cargando…</div>;
-  if (done) return <Results items={items} title={session.title} practice={practice} slug={slug} domainsById={domainsById} done={done} onBack={() => { setSession(null); nav(`/e/${slug}`); }} />;
+  if (done) return <Results items={items} title={session.title} practice={practice} slug={slug} domainsById={domainsById} scenarios={scenarios} done={done} onBack={() => { setSession(null); nav(`/e/${slug}`); }} />;
 
   const it = items[i];
   const t = qText(it.q, lang);
+  const sc = it.q.scenario ? scenarios[it.q.scenario] : undefined;
+  const scIndex = sc ? runScenarios.indexOf(sc.code) + 1 : 0;
+  const firstOfScenario = !!sc && (i === 0 || items[i - 1].q.scenario !== sc.code);
   const multi = it.q.correct.length > 1;
   const locked = practice && it.checked;
   const answeredCount = items.filter((x) => x.pick.length).length;
@@ -132,7 +140,8 @@ export default function Runner() {
           </section>
         </main>
       ) : (
-      <main className="wrap exam-layout">
+      <main className={`wrap exam-layout${sc ? ' scen' : ''}`}>
+        {sc && !narrow && <ScenarioPane scenario={sc} lang={lang} index={scIndex} count={runScenarios.length} />}
         <article className={`qcard ${locked ? 'locked' : ''}`}
           onTouchStart={(e) => { const t0 = e.touches[0]; touch.current = { x: t0.clientX, y: t0.clientY }; }}
           onTouchEnd={(e) => {
@@ -145,6 +154,7 @@ export default function Runner() {
             if (dx < 0 && i < items.length - 1) { setI(i + 1); setConfirming(false); window.scrollTo({ top: 0 }); }
             if (dx > 0 && i > 0) { setI(i - 1); setConfirming(false); window.scrollTo({ top: 0 }); }
           }}>
+          {sc && narrow && <ScenarioPane key={it.q.id} scenario={sc} lang={lang} index={scIndex} count={runScenarios.length} collapsible defaultOpen={firstOfScenario} />}
           <div className="qhead">
             <span className="tag">{domainsById[it.q.domain_id]?.code} · {domainsById[it.q.domain_id]?.name}</span>
             {it.q.source === 'official_sample' && <span className="tag accent">Ejemplo de la guía oficial</span>}
@@ -201,11 +211,13 @@ export default function Runner() {
           <summary className="eyebrow">Navegación · {answeredCount} de {items.length}{flagged ? ` · ${flagged} marcadas` : ''}</summary>
           <div className="navgrid">
             {items.map((x, k) => {
+              const head = x.q.scenario && scenarios[x.q.scenario] && (k === 0 || items[k - 1].q.scenario !== x.q.scenario)
+                ? <span key={`h${k}`} className="navsc" title={scText(scenarios[x.q.scenario], lang).title}>{scText(scenarios[x.q.scenario], lang).title}</span> : null;
               let c = 'cell';
               if (k === i) c += ' cur';
               if (practice && x.checked) c += isRight(x) ? ' r' : ' w'; else if (x.pick.length) c += ' ans';
               if (x.flag) c += ' flag';
-              return <button key={k} className={c} aria-label={`Pregunta ${k + 1}`} onClick={() => { setI(k); setConfirming(false); if (narrow) window.scrollTo({ top: 0 }); }}>{k + 1}</button>;
+              return [head, <button key={k} className={c} aria-label={`Pregunta ${k + 1}`} onClick={() => { setI(k); setConfirming(false); if (narrow) window.scrollTo({ top: 0 }); }}>{k + 1}</button>];
             })}
           </div>
           </details>
@@ -236,8 +248,8 @@ function loadProgress(startedAt?: number): { items: Item[]; i: number; used: num
   } catch { return null; }
 }
 
-function Results({ items, title, practice, slug, domainsById, done, onBack }: {
-  items: Item[]; title: string; practice: boolean; slug: string; domainsById: Record<string, Domain>;
+function Results({ items, title, practice, slug, domainsById, scenarios, done, onBack }: {
+  items: Item[]; title: string; practice: boolean; slug: string; domainsById: Record<string, Domain>; scenarios: Record<string, Scenario>;
   done: { secondsUsed: number | null; saveError?: string; saving: boolean }; onBack: () => void;
 }) {
   const { lang, userId } = useApp();
@@ -255,6 +267,15 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
     byD[d.id].total++;
     if (isRight(x)) byD[d.id].ok++;
   }
+  const scAcc: Record<string, { ok: number; total: number; s: Scenario }> = {};
+  for (const x of graded) {
+    const sc = x.q.scenario ? scenarios[x.q.scenario] : undefined;
+    if (!sc) continue;
+    scAcc[sc.code] = scAcc[sc.code] || { ok: 0, total: 0, s: sc };
+    scAcc[sc.code].total++;
+    if (isRight(x)) scAcc[sc.code].ok++;
+  }
+  const bySc = Object.values(scAcc);
   const scoring = data?.exam ? SCORING[data.exam.vendor] : undefined;
   const v = pct >= 80 ? ['pass', 'Listo: por encima del objetivo del 80%'] : pct >= 72 ? ['edge', 'En la zona del aprobado, sin margen'] : ['fail', 'Por debajo del aprobado estimado'];
   const list = graded.filter((x) => !onlyWrong || !isRight(x));
@@ -291,6 +312,23 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
           );
         })}
       </section>
+      {bySc.length > 0 && (
+        <section className="panel">
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Resultado por escenario</div>
+          {bySc.map(({ s: sc, ok: o, total }) => {
+            const p = Math.round((o / total) * 100);
+            const col = p >= 80 ? 'var(--ok)' : p >= 65 ? 'var(--flag)' : 'var(--bad)';
+            return (
+              <div className="wrow" key={sc.code}>
+                <span>{scText(sc, lang).title}</span>
+                <span className="mono" style={{ textAlign: 'right' }}>{o}/{total}</span>
+                <span className="mono" style={{ textAlign: 'right', fontWeight: 600, color: col }}>{p}%</span>
+                <div className="bar goal"><i style={{ width: `${p}%`, background: col }} /></div>
+              </div>
+            );
+          })}
+        </section>
+      )}
       <div className="row" style={{ marginTop: 18 }}>
         <button className="btn solid" onClick={onBack}>Volver al examen</button>
         <Link className="btn" to={`/e/${slug}/repaso`}>Mi lista de repaso</Link>
@@ -306,9 +344,13 @@ function Results({ items, title, practice, slug, domainsById, done, onBack }: {
               <div className="qhead">
                 <span className="tag mono">{k + 1}</span>
                 <span className="tag">{domainsById[x.q.domain_id]?.code} · {domainsById[x.q.domain_id]?.name}</span>
+                {x.q.scenario && scenarios[x.q.scenario] && <span className="tag sc">{scText(scenarios[x.q.scenario], lang).title}</span>}
                 <span className="tag" style={{ color: r ? 'var(--ok)' : 'var(--bad)' }}>{r ? 'Correcta' : x.pick.length ? 'Incorrecta' : 'Sin responder'}</span>
                 {x.flag && <span className="tag multi">Marcada</span>}
               </div>
+              {x.q.scenario && scenarios[x.q.scenario] && (k === 0 || graded[k - 1]?.q.scenario !== x.q.scenario || onlyWrong) && (
+                <ScenarioPane scenario={scenarios[x.q.scenario]} lang={lang} collapsible defaultOpen={false} />
+              )}
               <p className="qtext">{xt.stem}</p>
               <ul>{x.order.map((oi, j) => <li key={j} className={x.correct.includes(j) ? 'c' : x.pick.includes(j) ? 'x' : ''}>{LETTERS[j]}. {xt.options[oi]}</li>)}</ul>
               {xt.explanation && <div className="expl">{xt.explanation}</div>}

@@ -1,4 +1,4 @@
-import type { Domain, Item, Question } from './types';
+import type { Domain, Exam, Item, Question, Scenario } from './types';
 
 export const LETTERS = 'ABCDEF';
 
@@ -59,6 +59,35 @@ export function buildExam(domains: Domain[], pool: Question[], total: number, se
   const chosen: Question[] = [];
   for (const d of domains) chosen.push(...freshFirst(pool.filter((q) => q.domain_id === d.id), seen).slice(0, plan[d.id] || 0));
   return shuffle(chosen).map(toItem);
+}
+
+/** Scenarios of the exam that have at least one question in the pool. */
+export function usableScenarios(exam: Exam, pool: Question[]): Scenario[] {
+  const codes = new Set(pool.map((q) => q.scenario).filter(Boolean));
+  return (exam.scenarios || []).filter((s) => codes.has(s.code));
+}
+
+/**
+ * Scenario-based exam, as in the real one: draw `scenario_count` scenarios at random, split the
+ * questions evenly between them (unseen questions first) and keep each scenario's questions together.
+ * Falls back to the domain-weighted exam when the exam has no scenarios.
+ */
+export function buildExamFor(exam: Exam, domains: Domain[], pool: Question[], total: number, seen: Set<string>): Item[] {
+  const usable = usableScenarios(exam, pool);
+  if (!usable.length) return buildExam(domains, pool, total, seen);
+  const picked = shuffle(usable).slice(0, Math.max(1, Math.min(exam.scenario_count || 4, usable.length)));
+  const groups = picked.map((s) => freshFirst(pool.filter((q) => q.scenario === s.code), seen));
+  const quota = groups.map(() => 0);
+  // Round-robin so every scenario gets its share (or all it has).
+  let left = Math.min(total, groups.reduce((n, g) => n + g.length, 0));
+  while (left > 0) {
+    let placed = false;
+    for (let k = 0; k < groups.length && left > 0; k++) {
+      if (quota[k] < groups[k].length) { quota[k]++; left--; placed = true; }
+    }
+    if (!placed) break;
+  }
+  return groups.flatMap((g, k) => g.slice(0, quota[k])).map(toItem);
 }
 
 export function clock(s: number): string {

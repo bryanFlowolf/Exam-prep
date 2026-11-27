@@ -6,6 +6,7 @@ import { LETTERS, fmtDate, shuffle, toItem } from '../lib/exam';
 import { removeReview } from '../lib/data';
 import { QL, qText } from '../lib/lang';
 import Tutor from '../components/Tutor';
+import ScenarioPane from '../components/ScenarioPane';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 
 type Filter = 'all' | 'wrong' | 'flag';
@@ -23,6 +24,7 @@ export default function Review() {
   if (!data) return <div className="center">Cargando…</div>;
 
   const domains = Object.fromEntries(data.domains.map((d) => [d.id, d]));
+  const scenarios = Object.fromEntries((data.exam.scenarios || []).map((s) => [s.code, s]));
   const entries = data.questions
     .filter((q) => data.review.has(q.id))
     .map((q) => ({ q, r: data.review.get(q.id)! }))
@@ -72,6 +74,7 @@ export default function Review() {
               <span className="tag">Última vez: {r.last_result} · {fmtDate(r.last_at)}</span>
             </div>
             {t.missing && <div className="qhead"><span className="tag">{L.missing}</span></div>}
+            {q.scenario && scenarios[q.scenario] && <ScenarioPane scenario={scenarios[q.scenario]} lang={lang} collapsible defaultOpen={false} />}
             <p className="qtext">{t.stem}</p>
             <ul>{t.options.map((o, i) => <li key={i} className={q.correct.includes(i) ? 'c' : ''}>{LETTERS[i]}. {o}</li>)}</ul>
             {r.last_result === 'fallada' && r.last_pick.length > 0 && (

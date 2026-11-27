@@ -12,7 +12,13 @@ export type Exam = {
   mini_minutes: number;
   passing_note: string;
   is_published: boolean;
+  /** Scenario-based exams (scenarios migration): the scenarios and how many a simulation draws. */
+  scenarios?: Scenario[];
+  scenario_count?: number | null;
 };
+
+/** A case study shown next to its questions. `i18n.en` holds the English text. */
+export type Scenario = { code: string; title: string; text: string; i18n?: Record<string, { title: string; text: string }> };
 
 export type DocLink = { title: string; url: string };
 
@@ -76,6 +82,8 @@ export type Question = {
   author_id: string | null;
   created_at: string;
   is_active?: boolean;
+  /** Code of the exam scenario this question belongs to, if any. */
+  scenario?: string | null;
 };
 
 export type ReviewItem = {

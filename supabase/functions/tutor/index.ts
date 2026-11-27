@@ -79,7 +79,10 @@ Deno.serve(async (req) => {
   if (used === false) return json(429, { error: 'limit', limit });
 
   // Load the question as the user.
-  const { data: q } = await userDb.from('questions').select('stem, options, correct, explanation, i18n, domain:domains(code, name, docs), exam:exams(vendor, code, name)').eq('id', body.question_id).maybeSingle();
+  const base = 'stem, options, correct, explanation, i18n, domain:domains(code, name, docs)';
+  let { data: q, error: qErr } = await userDb.from('questions').select(`${base}, scenario, exam:exams(vendor, code, name, scenarios)`).eq('id', body.question_id).maybeSingle();
+  // Databases without the scenarios migration: read the question without them.
+  if (qErr) ({ data: q } = await userDb.from('questions').select(`${base}, exam:exams(vendor, code, name)`).eq('id', body.question_id).maybeSingle());
   if (!q) return json(404, { error: 'question' });
   const t = lang !== 'es' && q.i18n?.[lang] ? q.i18n[lang] : null;
   const stem: string = t?.stem || q.stem;
@@ -90,6 +93,9 @@ Deno.serve(async (req) => {
   const e = q.exam as { vendor?: string; code?: string; name?: string } | null;
   const topic = [e?.vendor, e?.code, e?.name].filter(Boolean).join(' ') + (d ? ` · ${d.code} ${d.name}` : '');
   const docs = (d?.docs || []).slice(0, 4);
+  type Sc = { code: string; title: string; text: string; i18n?: Record<string, { title?: string; text?: string }> };
+  const sc = ((e as { scenarios?: Sc[] } | null)?.scenarios || []).find((x) => x.code === (q as { scenario?: string | null }).scenario);
+  const scT = sc ? (lang !== 'es' && sc.i18n?.[lang]?.text ? { title: sc.i18n[lang]!.title || sc.title, text: sc.i18n[lang]!.text! } : sc) : null;
 
   const n = options.length;
   const order = Array.isArray(body.order) && body.order.length === n && [...body.order].sort().every((v, i) => v === i) ? body.order : options.map((_, i) => i);
@@ -98,6 +104,7 @@ Deno.serve(async (req) => {
   const shown = order.map((oi, k) => `${LETTERS[k]}. ${options[oi]}`).join('\n');
   const context = [
     `${lang === 'en' ? 'Topic' : 'Tema'}: ${topic}`,
+    scT ? `${lang === 'en' ? 'Exam scenario' : 'Escenario del examen'} (${scT.title}):\n${scT.text}` : '',
     `${lang === 'en' ? 'Question' : 'Pregunta'}:\n${stem}`,
     `${lang === 'en' ? 'Options (as shown to the learner)' : 'Opciones (tal como las vio)'}:\n${shown}`,
     `${lang === 'en' ? 'Correct answer' : 'Respuesta correcta'}: ${correct.map(letterOf).sort().join(', ')}`,

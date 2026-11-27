@@ -109,6 +109,8 @@ Crea un JSON con este formato (ver `content/exams/anthropic-ccdv-f.json`) y súb
 - `correct` usa índices desde 0; con varios índices la pregunta es de respuesta múltiple. Entre 2 y 6 opciones, y al menos una incorrecta.
 - `source: "official_sample"` marca una pregunta de ejemplo publicada en la guía oficial.
 - Si el `slug` ya existe, se actualiza el examen y se sustituyen sus preguntas del banco; las del equipo se conservan.
+- **Exámenes por escenarios** (como CCAR-F): añade `"scenarios": [{"code": "S1", "title": "…", "text": "…", "i18n": {"en": {"title": "…", "text": "…"}}}]`, `"scenario_count": 4` dentro de `exam` y `"scenario": "S1"` en cada pregunta. El simulacro y el mini-examen eligen al azar `scenario_count` escenarios, reparten las preguntas a partes iguales y las agrupan por escenario; en pantalla, el escenario aparece a la izquierda y la pregunta a la derecha (en el móvil, desplegable encima). Requiere la migración `20261128000000_scenarios.sql`.
+- Para sustituir el banco de un examen ya publicado sin borrar el historial de nadie: `node scripts/build-replace-script.mjs content/exams/<slug>.json supabase/content-updates/<archivo>.sql [migraciones…]` genera un script que desactiva las preguntas antiguas y añade las nuevas.
 - Para versionar el contenido en el repositorio, guarda el JSON en `content/exams/` y ejecuta `npm run seed` para regenerar `supabase/seed.sql`.
 
 **Contenido permitido:** solo preguntas propias o con permiso de su autor. No uses preguntas de exámenes reales ni de bancos de terceros ("brain dumps"): los acuerdos de confidencialidad de Anthropic, Salesforce, Appian y la mayoría de fabricantes lo prohíben y pueden retirar la certificación.

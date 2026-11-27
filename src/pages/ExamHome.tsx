@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../App';
 import { useExam } from '../lib/useExam';
-import { buildExam, fmtDate, freshFirst, shuffle, toItem } from '../lib/exam';
+import { buildExamFor, fmtDate, freshFirst, shuffle, toItem, usableScenarios } from '../lib/exam';
+import { scText } from '../lib/lang';
 import { resetSeen, saveTargetDate } from '../lib/data';
 import type { Mode, Question } from '../lib/types';
 import { guideFor } from '../lib/registration';
@@ -16,10 +17,11 @@ const MODE_LABEL: Record<Mode, string> = {
 
 export default function ExamHome() {
   const { slug = '' } = useParams();
-  const { userId, session, setSession } = useApp();
+  const { userId, session, setSession, lang } = useApp();
   const { data, error, update } = useExam(slug, userId);
   const nav = useNavigate();
   const [practice, setPractice] = useState<Set<string> | null>(null);
+  const [scPick, setScPick] = useState<Set<string> | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [dateMsg, setDateMsg] = useState('');
   const [readyOpen, setReadyOpen] = useState(loadReadyOpen);
@@ -41,6 +43,9 @@ export default function ExamHome() {
   if (error) return <main className="wrap"><div className="msg err" style={{ marginTop: 24 }}>{error}</div></main>;
   if (!data || !stats) return <div className="center">Cargando…</div>;
   const { exam, domains } = data;
+  const scs = usableScenarios(exam, stats.bank);
+  const scCount = Math.min(exam.scenario_count || 4, scs.length);
+  const scIds = scPick ?? new Set(scs.map((x) => x.code));
   const domainIds = practice ?? new Set(domains.map((d) => d.id));
 
   const start = (mode: Mode, items: ReturnType<typeof toItem>[], title: string, seconds = 0) => {
@@ -160,16 +165,18 @@ export default function ExamHome() {
         <div className="card primary">
           <div className="eyebrow">Condiciones de examen</div>
           <h2>Simulacro completo</h2>
-          <p>{exam.sim_questions} preguntas con el reparto por dominios del examen y cronómetro. Se corrige al terminar.</p>
+          <p>{scs.length
+            ? <>{exam.sim_questions} preguntas sobre {scCount} escenarios elegidos al azar entre {scs.length}, como en el examen real: el escenario a la izquierda y sus preguntas a la derecha. Con cronómetro; se corrige al terminar.</>
+            : <>{exam.sim_questions} preguntas con el reparto por dominios del examen y cronómetro. Se corrige al terminar.</>}</p>
           <div className="meta">{exam.sim_questions} preguntas · {exam.sim_minutes}:00</div>
-          <button className="btn solid" onClick={() => start('sim', buildExam(domains, stats.bank, exam.sim_questions, data.seen), 'Simulacro completo', exam.sim_minutes * 60)}>Empezar simulacro</button>
+          <button className="btn solid" onClick={() => start('sim', buildExamFor(exam, domains, stats.bank, exam.sim_questions, data.seen), 'Simulacro completo', exam.sim_minutes * 60)}>Empezar simulacro</button>
         </div>
         <div className="card">
           <div className="eyebrow">Diagnóstico</div>
           <h2>Mini-examen</h2>
-          <p>{exam.mini_questions} preguntas con el mismo reparto proporcional.</p>
+          <p>{scs.length ? `${exam.mini_questions} preguntas sobre ${scCount} escenarios al azar.` : `${exam.mini_questions} preguntas con el mismo reparto proporcional.`}</p>
           <div className="meta">{exam.mini_questions} preguntas · {exam.mini_minutes}:00</div>
-          <button className="btn" onClick={() => start('mini', buildExam(domains, stats.bank, exam.mini_questions, data.seen), 'Mini-examen', exam.mini_minutes * 60)}>Empezar mini-examen</button>
+          <button className="btn" onClick={() => start('mini', buildExamFor(exam, domains, stats.bank, exam.mini_questions, data.seen), 'Mini-examen', exam.mini_minutes * 60)}>Empezar mini-examen</button>
         </div>
         <div className="card">
           <div className="eyebrow">Sin reloj</div>
@@ -184,6 +191,26 @@ export default function ExamHome() {
           </div>
           <button className="btn" disabled={!domainIds.size} onClick={() => start('practice', practiceItems(stats.bank.filter((q) => domainIds.has(q.domain_id))), 'Práctica por dominio')}>Empezar práctica</button>
         </div>
+        {scs.length > 0 && (
+          <div className="card">
+            <div className="eyebrow">Sin reloj</div>
+            <h2>Práctica por escenario</h2>
+            <p>Elige escenarios y corrige cada pregunta al momento, con el escenario siempre a la vista.</p>
+            <div className="row" style={{ gap: 6 }}>
+              {scs.map((x) => (
+                <button key={x.code} className="chip" aria-pressed={scIds.has(x.code)} onClick={() => {
+                  const n = new Set(scIds); if (n.has(x.code)) n.delete(x.code); else n.add(x.code); setScPick(n);
+                }}>{scText(x, lang).title}</button>
+              ))}
+            </div>
+            <button className="btn" disabled={!scIds.size} onClick={() => {
+              const pool = stats.bank.filter((q) => q.scenario && scIds.has(q.scenario));
+              // Keep each scenario's questions together, unseen first.
+              const items = scs.filter((x) => scIds.has(x.code)).flatMap((x) => freshFirst(pool.filter((q) => q.scenario === x.code), data.seen)).map(toItem);
+              start('practice', items, 'Práctica por escenario');
+            }}>Empezar práctica</button>
+          </div>
+        )}
         <div className="card targeted">
           <div className="eyebrow">Tus puntos débiles</div>
           <h2>Práctica dirigida</h2>
