@@ -13,6 +13,8 @@
 --                        No se puede modificar ni borrar desde la app: es la evidencia de la formación.
 --                        Un curso con registros no se puede borrar (solo despublicar).
 --
+-- Solo ven un curso las personas que lo tienen asignado (y los administradores y editores de formación).
+--
 -- Se puede ejecutar más de una vez.
 
 -- ---------------------------------------------------------------------------
@@ -175,6 +177,23 @@ create table if not exists public.course_completions (
 create index if not exists course_completions_user_idx on public.course_completions (user_id, course_id, completed_at desc);
 create index if not exists course_completions_course_idx on public.course_completions (course_id, completed_at desc);
 
+-- ¿Tengo asignado este curso (directamente o por equipo)? Solo así lo ve quien no es editor.
+create or replace function public.is_assigned(p_course uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.course_assignments a
+    where a.course_id = p_course
+      and (a.user_id = auth.uid()
+           or a.team_id in (select team_id from public.team_members where user_id = auth.uid()))
+  );
+$$;
+grant execute on function public.is_assigned(uuid) to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Seguridad
 -- ---------------------------------------------------------------------------
@@ -186,13 +205,15 @@ alter table public.lesson_progress enable row level security;
 alter table public.course_completions enable row level security;
 
 drop policy if exists courses_read on public.courses;
-create policy courses_read on public.courses for select to authenticated using (is_published or public.can_edit_training());
+create policy courses_read on public.courses for select to authenticated
+  using (public.can_edit_training() or (is_published and public.is_assigned(id)));
 drop policy if exists courses_edit on public.courses;
 create policy courses_edit on public.courses for all to authenticated using (public.can_edit_training()) with check (public.can_edit_training());
 
 drop policy if exists lessons_read on public.course_lessons;
 create policy lessons_read on public.course_lessons for select to authenticated
-  using (public.can_edit_training() or exists (select 1 from public.courses c where c.id = course_id and c.is_published));
+  using (public.can_edit_training() or exists (
+    select 1 from public.courses c where c.id = course_id and c.is_published and public.is_assigned(c.id)));
 drop policy if exists lessons_edit on public.course_lessons;
 create policy lessons_edit on public.course_lessons for all to authenticated using (public.can_edit_training()) with check (public.can_edit_training());
 
@@ -211,7 +232,7 @@ drop policy if exists progress_own on public.lesson_progress;
 create policy progress_own on public.lesson_progress for select to authenticated using (user_id = auth.uid() or public.can_edit_training());
 drop policy if exists progress_insert on public.lesson_progress;
 create policy progress_insert on public.lesson_progress for insert to authenticated
-  with check (user_id = auth.uid() and exists (
+  with check (user_id = auth.uid() and public.is_assigned(course_id) and exists (
     select 1 from public.course_lessons l join public.courses c on c.id = l.course_id
     where l.id = lesson_id and l.course_id = lesson_progress.course_id and c.is_published));
 
@@ -237,7 +258,8 @@ set search_path = public
 as $$
 declare v_size int;
 begin
-  select quiz_size into v_size from public.courses where courses.id = p_course and (is_published or public.can_edit_training());
+  select quiz_size into v_size from public.courses
+  where courses.id = p_course and ((is_published and public.is_assigned(p_course)) or public.can_edit_training());
   if not found then raise exception 'Curso no disponible'; end if;
   return query
     select q.id, q.stem, q.options, array_length(q.correct, 1) > 1
@@ -270,6 +292,7 @@ begin
   if v_uid is null then raise exception 'Sin sesión'; end if;
   select * into c from public.courses where id = p_course and is_published;
   if not found then raise exception 'Curso no disponible'; end if;
+  if not public.is_assigned(p_course) then raise exception 'Este curso no está asignado a tu usuario'; end if;
   if exists (
     select 1 from public.course_lessons l
     where l.course_id = p_course

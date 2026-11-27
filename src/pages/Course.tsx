@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useApp } from '../App';
 import Markdown from '../components/Markdown';
 import { LETTERS } from '../lib/exam';
 import {
-  catLabel, completeLesson, courseQuiz, myTraining, fileUrl, fmtDay, getCourse, submitCourse,
+  catLabel, completeLesson, courseQuiz, fileUrl, fmtDay, getCourse, submitCourse,
   type Completion, type Course as CourseT, type Lesson, type QuizQuestion, type SubmitResult,
 } from '../lib/training';
 
@@ -15,7 +15,8 @@ export default function Course() {
   const [data, setData] = useState<{ course: CourseT; lessons: Lesson[]; done: Set<string>; completions: Completion[] } | null>(null);
   const [error, setError] = useState('');
   const [view, setView] = useState<View | null>(null);
-  const { setPending } = useApp();
+  const { profile, assignedCourses, refreshTraining } = useApp();
+  const editor = !!(profile?.is_admin || profile?.is_editor);
 
   const load = async () => {
     try {
@@ -26,6 +27,8 @@ export default function Course() {
   };
   useEffect(() => { load(); }, [id]);
 
+  // Only assigned people (and admins / training editors) can open a course.
+  if (profile && assignedCourses && !editor && !assignedCourses.has(id)) return <Navigate to={assignedCourses.size ? '/formacion' : '/'} replace />;
   if (error) return <main className="wrap"><div className="msg err" style={{ marginTop: 24 }}>{error}</div><p><Link to="/formacion">← Volver a formación</Link></p></main>;
   if (!data || !view) return <div className="center">Cargando curso…</div>;
   const { course, lessons, done, completions } = data;
@@ -83,7 +86,7 @@ export default function Course() {
             <LessonView key={lesson.id} lesson={lesson} isDone={done.has(lesson.id)} onDone={() => markDone(lesson)}
               onNext={() => setView(lessons[idx + 1] ? { kind: 'lesson', id: lessons[idx + 1].id } : { kind: 'quiz' })} />
           ) : (
-            <Quiz course={course} ready={allDone} onFinished={() => { load(); myTraining().then((m) => setPending(m.filter((x) => x.state !== 'completado').length)).catch(() => {}); }} />
+            <Quiz course={course} ready={allDone} onFinished={() => { load(); refreshTraining(); }} />
           )}
         </section>
       </div>

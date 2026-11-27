@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { CATEGORIES, catLabel, fmtDay, listCourses, myTraining, STATE_LABEL, type Course, type MyTraining } from '../lib/training';
 
 export default function Training() {
-  const { profile, setPending } = useApp();
+  const { profile, assignedCourses, canTrain, refreshTraining } = useApp();
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [mine, setMine] = useState<MyTraining[]>([]);
   const [error, setError] = useState('');
@@ -12,16 +12,20 @@ export default function Training() {
 
   useEffect(() => {
     Promise.all([listCourses(), myTraining()])
-      .then(([c, m]) => { setCourses(c); setMine(m); setPending(m.filter((x) => x.state !== 'completado').length); })
+      .then(([c, m]) => { setCourses(c); setMine(m); refreshTraining(); })
       .catch((e: { message?: string }) => setError(/courses|my_training|schema cache/i.test(e?.message || '')
         ? 'La formación interna aún no está activada: falta ejecutar la migración de formación en Supabase.'
         : `No se ha podido cargar la formación. Detalle: ${e?.message || 'error desconocido'}`));
   }, []);
 
+  // Hidden for people with nothing assigned (admins and training editors always see it).
+  if (profile && assignedCourses && !canTrain) return <Navigate to="/" replace />;
+
   const byId = new Map((courses || []).map((c) => [c.id, c]));
   const assigned = mine.filter((m) => byId.has(m.course_id))
     .sort((a, b) => rank(a.state) - rank(b.state) || (a.due_date || '9999').localeCompare(b.due_date || '9999'));
-  const visible = (courses || []).filter((c) => c.is_published);
+  // The full catalogue is for admins and training editors; everyone else sees only what is assigned to them.
+  const visible = editor ? (courses || []).filter((c) => c.is_published) : [];
   const pending = assigned.filter((m) => m.state !== 'completado').length;
 
   return (
@@ -29,7 +33,7 @@ export default function Training() {
       <header className="hero">
         <div className="eyebrow">Formación interna</div>
         <h1>Tus formaciones</h1>
-        <p>Cursos de la empresa: prevención de riesgos laborales, onboarding y tecnologías. Cada curso tiene lecciones y un test final; al aprobarlo obtienes un certificado.</p>
+        <p>Formaciones de la empresa que tienes asignadas: prevención de riesgos laborales, onboarding, tecnologías… Cada curso tiene lecciones y un test final; al aprobarlo obtienes un certificado.</p>
         {editor && <p style={{ marginTop: 8 }}><Link to="/formacion/gestion">Gestionar cursos, asignaciones y cumplimiento →</Link></p>}
       </header>
       {error && <div className="msg err">{error}</div>}
@@ -79,7 +83,7 @@ export default function Training() {
           </section>
         );
       })}
-      {courses && visible.length === 0 && !error && (
+      {courses && editor && visible.length === 0 && !error && (
         <div className="panel"><p className="note">Todavía no hay cursos publicados.{editor ? ' Créalos desde Gestionar cursos.' : ''}</p></div>
       )}
     </main>

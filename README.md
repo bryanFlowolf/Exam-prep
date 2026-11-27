@@ -19,7 +19,7 @@ Aplicación para preparar certificaciones: simulacros con el reparto oficial por
 | Reportes de preguntas | Quien lo envía y los administradores (que ven su nombre) |
 | Progreso compartido con un equipo | Solo los **responsables** de ese equipo, y solo de los miembros que activan "compartir mi progreso" en *Mis equipos*. Es un resumen por examen (nota estimada, probabilidad, respuestas, última actividad, último simulacro, fecha de examen), nunca preguntas ni respuestas. Ser administrador no da acceso |
 
-| Cursos internos y sus lecciones | Todos los usuarios con sesión (los publicados); los editores de formación ven también los borradores |
+| Cursos internos y sus lecciones | Solo quien los tiene asignados (directamente o por equipo), además de administradores y editores de formación. La sección *Formación* no aparece a quien no tiene nada asignado |
 | Preguntas del test de un curso (con su respuesta) | Solo administradores y editores de formación. El test se reparte y se corrige en el servidor |
 | Avance en lecciones, intentos de test, certificados y firmas de conformidad | Su dueño, y los administradores y editores de formación (es la evidencia de la formación obligatoria) |
 | Consultas al tutor IA | Nadie: no se guardan. Solo se cuenta cuántas hace cada persona al día para aplicar el límite |
@@ -128,6 +128,7 @@ Además de las certificaciones, la app centraliza la formación de la empresa (p
 
 - **Roles:** los administradores pueden nombrar **editores de formación** en *Administración → Personas registradas*. Un editor crea cursos, asigna y consulta el cumplimiento, sin acceso al resto de la administración.
 - **Cursos** (*Formación → Gestionar cursos*): lecciones de texto, vídeo (YouTube, Vimeo o archivo subido), PDF (enlace o archivo) o enlace externo, y un test final con nota de aprobado. Opcionalmente, una muestra aleatoria de preguntas por intento, caducidad del certificado (p. ej. 12 meses para renovar cada año) y **firma de conformidad**: al aprobar, la persona acepta una declaración y queda registrada con fecha y hora.
+- **Visibilidad:** la sección *Formación* solo aparece a administradores, editores de formación y personas con algún curso asignado, y cada persona solo ve sus cursos asignados (también a nivel de base de datos).
 - **Asignaciones:** a personas o equipos, con fecha límite opcional. Asignar a un equipo incluye a quien entre más tarde. Cada persona ve sus formaciones pendientes en *Formación*, con un contador en la cabecera y un aviso en la portada.
 - **Cumplimiento:** por curso, quién la tiene completada, pendiente, vencida (pasada la fecha límite) o caducada (hay que renovarla), con nota, firma y certificado. Se exporta a CSV para RR. HH. o auditorías.
 - **Certificado:** página imprimible con nombre, curso, fecha, nota, caducidad, código y declaración firmada; se guarda en PDF desde el navegador.

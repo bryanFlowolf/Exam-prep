@@ -34,7 +34,11 @@ type Ctx = {
   teamCount: number;
   /** Assigned trainings not completed (for the header badge). */
   pending: number;
-  setPending: (n: number) => void;
+  /** Courses assigned to me (directly or through a team); null while loading. */
+  assignedCourses: Set<string> | null;
+  /** The Training section is shown to admins, training editors and people with an assignment. */
+  canTrain: boolean;
+  refreshTraining: () => Promise<void>;
 };
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -63,7 +67,15 @@ export default function App() {
   const setSession = (s: Session | null) => { setSessionState(s); saveRun(s, auth?.user.id); };
   const [lang, setLangState] = useState<Lang>(loadLang);
   const [teamCount, setTeamCount] = useState(0);
-  const [pending, setPending] = useState(0);
+  const [training, setTraining] = useState<{ ids: Set<string>; pending: number } | null>(null);
+  const refreshTraining = async () => {
+    try {
+      const m = await myTraining();
+      setTraining({ ids: new Set(m.map((x) => x.course_id)), pending: m.filter((x) => x.state !== 'completado').length });
+    } catch { setTraining({ ids: new Set(), pending: 0 }); }
+  };
+  const pending = training?.pending ?? 0;
+  const canTrain = !!(profile?.is_admin || profile?.is_editor) || (training?.ids.size ?? 0) > 0;
   const setLang = (l: Lang) => { setLangState(l); saveLang(l); };
 
   useEffect(() => {
@@ -78,8 +90,8 @@ export default function App() {
       const run = loadRun();
       if (run && run.uid !== auth.user.id) { setSessionState(null); saveRun(null); }
     }
-    if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); myTraining().then((m) => setPending(m.filter((x) => x.state !== 'completado').length)).catch(() => setPending(0)); }
-    else { setProfile(null); setTeamCount(0); setPending(0); }
+    if (auth) { refreshProfile(); myTeamCount(auth.user.id).then(setTeamCount); refreshTraining(); }
+    else { setProfile(null); setTeamCount(0); setTraining(null); }
   }, [auth?.user.id]);
 
   if (!configured) {
@@ -94,7 +106,7 @@ export default function App() {
   if (!auth) return <Login />;
 
   return (
-    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount, pending, setPending }}>
+    <AppCtx.Provider value={{ userId: auth.user.id, profile, refreshProfile, session, setSession, lang, teamCount, pending, assignedCourses: training?.ids ?? null, canTrain, refreshTraining }}>
       <header className="topbar">
         <div className="wrap">
           <Link className="brand" to="/"><i className="logo" aria-hidden="true" />WolfPack Academy</Link>
@@ -104,7 +116,7 @@ export default function App() {
               <button key={l.code} type="button" aria-pressed={lang === l.code} title={l.name} onClick={() => setLang(l.code)}>{l.label}</button>
             ))}
           </div>
-          <Link className="btn small" to="/formacion">Formación{pending > 0 && <span className="badge" aria-label={`${pending} pendientes`}>{pending}</span>}</Link>
+          {canTrain && <Link className="btn small" to="/formacion">Formación{pending > 0 && <span className="badge" aria-label={`${pending} pendientes`}>{pending}</span>}</Link>}
           {(teamCount > 0 || profile?.is_admin) && <Link className="btn small hide-sm" to="/equipos">Equipos</Link>}
           {profile?.is_admin && <Link className="btn small hide-sm" to="/admin">Administración</Link>}
           <Link className="btn small" to="/cuenta">{profile?.display_name || 'Mi cuenta'}</Link>
