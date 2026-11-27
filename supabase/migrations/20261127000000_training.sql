@@ -46,6 +46,19 @@ end;
 $$;
 revoke execute on function public.tutor_take(uuid, int) from public, anon, authenticated;
 
+-- Versión para la persona con sesión (la usa la función del tutor con el token del usuario).
+-- Solo puede sumar consultas a su propio contador; el límite real lo fija el servidor.
+create or replace function public.tutor_use(p_limit int)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select case when auth.uid() is null then false else public.tutor_take(auth.uid(), p_limit) end;
+$$;
+revoke execute on function public.tutor_use(int) from public, anon;
+grant execute on function public.tutor_use(int) to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Rol editor de formación
 -- ---------------------------------------------------------------------------

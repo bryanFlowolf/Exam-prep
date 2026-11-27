@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
   const url = env('SUPABASE_URL')!;
   // Reads run as the user, so row-level security decides what they may see.
   const userDb = createClient(url, env('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authHeader } } });
-  const { data: u } = await userDb.auth.getUser();
-  if (!u?.user) return json(401, { error: 'auth' });
+  const { data: u, error: authErr } = await userDb.auth.getUser();
+  if (!u?.user) { console.error('tutor auth', authErr); return json(401, { error: 'auth' }); }
 
   let body: Req;
   try { body = await req.json(); } catch { return json(400, { error: 'body' }); }
@@ -69,11 +69,13 @@ Deno.serve(async (req) => {
   if (followUps[0]?.role === 'user') followUps.shift();
   if (followUps.length && followUps[followUps.length - 1].role !== 'user') return json(400, { error: 'messages' });
 
-  // Daily limit per user (counted with the service role so users can't reset it).
-  const admin = createClient(url, env('SUPABASE_SERVICE_ROLE_KEY')!);
+  // Daily limit per user. tutor_use counts for the signed-in user only (no service key needed, works with the new API keys).
   const limit = Number(env('TUTOR_DAILY_LIMIT') || 60);
-  const { data: used, error: usageErr } = await admin.rpc('tutor_take', { p_user: u.user.id, p_limit: limit });
-  if (usageErr) return json(500, { error: 'usage', detail: usageErr.message });
+  const { data: used, error: usageErr } = await userDb.rpc('tutor_use', { p_limit: limit });
+  if (usageErr) {
+    console.error('tutor usage', usageErr);
+    return json(500, { error: 'usage', detail: usageErr.message });
+  }
   if (used === false) return json(429, { error: 'limit', limit });
 
   // Load the question as the user.
