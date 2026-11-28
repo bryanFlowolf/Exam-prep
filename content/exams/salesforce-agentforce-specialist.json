@@ -11932,7 +11932,8 @@
     "Plantillas de correo de marketing"
    ],
    "correct": [
-    2
+    2,
+    3
    ],
    "explanation": "El enrutamiento y las colas de escalado deben existir en destino.",
    "i18n": {

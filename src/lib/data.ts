@@ -3,6 +3,7 @@ import { answered, isRight } from './exam';
 import type { Attempt, Calibration, Domain, Exam, ExamPlan, ExamResult, Item, Mode, Profile, Question, QuestionReport, QuestionStat, ReportReason, ReviewItem, Team, TeamActivityRow, TeamMember, TeamProgressRow } from './types';
 import { readiness, recentTotals } from './readiness';
 import { schedule, type SrsContext } from './srs';
+import type { QualityReview } from './quality';
 
 const PAGE = 1000;
 
@@ -351,7 +352,38 @@ export async function loadQuality(examId: string) {
   if (domains.error) throw domains.error;
   const openReports = new Map<string, number>();
   for (const r of reports) openReports.set(r.question_id, (openReports.get(r.question_id) || 0) + 1);
-  return { questions, domains: (domains.data || []) as Domain[], stats: new Map(stats.map((s) => [s.question_id, s])), openReports };
+  // Admin reviews of automatic flags (quality migration); empty until it is applied.
+  const reviews = await optional<QualityReview>(supabase.from('question_quality_reviews').select('*').eq('exam_id', examId));
+  return {
+    questions, domains: (domains.data || []) as Domain[], stats: new Map(stats.map((s) => [s.question_id, s])), openReports,
+    reviews: new Map(reviews.map((r) => [r.question_id, r])),
+  };
+}
+
+export async function saveQualityReview(r: Pick<QualityReview, 'question_id' | 'exam_id' | 'status' | 'note' | 'answered_at_review'>): Promise<QualityReview> {
+  const { data, error } = await supabase.from('question_quality_reviews')
+    .upsert({ ...r, reviewed_at: new Date().toISOString() }, { onConflict: 'question_id' }).select().single();
+  if (error) throw error;
+  return data as QualityReview;
+}
+
+export async function deleteQualityReview(questionId: string) {
+  const { error } = await supabase.from('question_quality_reviews').delete().eq('question_id', questionId);
+  if (error) throw error;
+}
+
+export type BankPatch = Pick<Question, 'stem' | 'options' | 'correct' | 'explanation'>;
+
+/** Admin correction of a bank question (Spanish text; the English version is kept unless options change count). */
+export async function updateBankQuestion(id: string, patch: BankPatch): Promise<Question> {
+  const { data, error } = await supabase.from('questions').update(patch).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Question;
+}
+
+export async function resetQuestionStats(id: string) {
+  const { error } = await supabase.rpc('reset_question_stats', { p_question: id });
+  if (error) throw error;
 }
 
 export async function setQuestionActive(id: string, value: boolean) {

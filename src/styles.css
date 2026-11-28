@@ -537,3 +537,34 @@ input[type=text]:not(.form *) { font: inherit; color: var(--ink); background: va
 .hc.low { background: var(--bad-soft); color: var(--bad); }
 .hc.none { color: var(--muted); }
 .heattable tr.avg td { border-top: 2px solid var(--line); font-weight: 700; }
+
+/* Revisión automática del banco */
+.input { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; max-width: 100%; width: 100%; }
+textarea.input { resize: vertical; font-family: var(--f-body); }
+.examsel { margin-top: 18px; gap: 10px; }
+.examsel .fl { font-weight: 600; font-size: 14px; }
+.chip.sev-alta[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); }
+.chip.sev-media[aria-pressed="true"] { background: var(--flag-soft); border-color: var(--flag); }
+.qcard { border-left-width: 4px; }
+.qcard.sev-alta { border-left-color: var(--bad); }
+.qcard.sev-media { border-left-color: var(--flag); }
+.qcard.sev-baja { border-left-color: var(--line); }
+.tag.sevtag.sev-alta { background: var(--bad-soft); color: var(--bad); border-color: transparent; font-weight: 600; }
+.tag.sevtag.sev-media { background: var(--flag-soft); color: var(--flag); border-color: transparent; font-weight: 600; }
+.tag.sevtag.sev-baja { color: var(--muted); }
+.flagdetail { margin: 8px 0 4px; padding-left: 18px; font-size: 14px; display: grid; gap: 3px; }
+.flagdetail li::marker { color: var(--muted); }
+.flagdetail li.sev-alta::marker { color: var(--bad); }
+.flagdetail li.sev-media::marker { color: var(--flag); }
+.qsum { cursor: pointer; font-size: 14px; color: var(--muted); }
+.optstats { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; }
+.optstats li { position: relative; display: flex; gap: 10px; align-items: baseline; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; overflow: hidden; }
+.optstats li .bar { position: absolute; inset: 0 auto 0 0; background: var(--sunk); z-index: 0; }
+.optstats li.c { border-color: var(--ok); }
+.optstats li.c .bar { background: var(--ok-soft); }
+.optstats li .txt, .optstats li .pct { position: relative; z-index: 1; }
+.optstats li .txt { flex: 1; min-width: 0; }
+.optstats li.c .txt { font-weight: 600; }
+.qedit { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+.qedit .optrow { flex-wrap: nowrap; gap: 8px; }
+.allsum { width: 100%; display: grid; gap: 6px; justify-items: start; }

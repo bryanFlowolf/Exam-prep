@@ -8,6 +8,7 @@ import type { Calibration, Domain, Exam, Question, QuestionReport, QuestionStat 
 import { MIN_STAT } from '../components/QuestionExtras';
 import { AdminTabs } from './Admin';
 import Stem from '../components/Stem';
+import QualityReview from '../components/QualityReview';
 
 const REASON = QL.es.reasons;
 
@@ -100,7 +101,7 @@ function Reports() {
           );
         })}
       </div>
-      <p className="note" style={{ marginTop: 10 }}>Corregir el texto de una pregunta del banco se hace en su fichero de <code>content/exams/</code> y reimportando; desactivarla la retira de inmediato sin borrar el progreso de nadie.</p>
+      <p className="note" style={{ marginTop: 10 }}>Una pregunta reportada aparece también en la <i>Revisión automática</i>, donde puedes corregirla o desactivarla sin borrar el progreso de nadie. Las correcciones hechas aquí se pierden si el banco se reimporta desde <code>content/exams/</code>: exporta las corregidas para incorporarlas.</p>
     </section>
   );
 }
@@ -115,10 +116,11 @@ function Quality() {
   const [err, setErr] = useState('');
 
   useEffect(() => { listExams().then((e) => { setExams(e); if (e[0]) setExamId(e[0].id); }).catch(() => setErr('No se han podido cargar los exámenes.')); }, []);
+  const reload = () => loadQuality(examId).then(setData).catch(() => setErr('No se han podido cargar las estadísticas.'));
   useEffect(() => {
     if (!examId) return;
     setData(null);
-    loadQuality(examId).then(setData).catch(() => setErr('No se han podido cargar las estadísticas.'));
+    reload();
   }, [examId]);
 
   const rows = useMemo<QRow[]>(() => {
@@ -145,13 +147,17 @@ function Quality() {
   const totalAnswers = rows.reduce((n, r) => n + (r.s?.answered || 0), 0);
 
   return (
+    <>
+    <div className="row examsel">
+      <label className="fl" htmlFor="q-exam" style={{ margin: 0 }}>Examen</label>
+      <select id="q-exam" value={examId} onChange={(e) => setExamId(e.target.value)} className="select">
+        {exams.map((e) => <option key={e.id} value={e.id}>{e.code || e.vendor} · {e.name}</option>)}
+      </select>
+    </div>
+    {data && <QualityReview data={data} exam={exams.find((e) => e.id === examId)} reload={reload} />}
     <section className="panel">
       <div className="row" style={{ marginBottom: 8 }}>
         <h2 className="ph">Estadísticas por pregunta</h2>
-        <span className="spacer" />
-        <select aria-label="Examen" value={examId} onChange={(e) => setExamId(e.target.value)} className="select">
-          {exams.map((e) => <option key={e.id} value={e.id}>{e.code || e.vendor} · {e.name}</option>)}
-        </select>
       </div>
       {err && <div className="msg err">{err}</div>}
       {!data && !err && <p className="note">Cargando…</p>}
@@ -186,6 +192,7 @@ function Quality() {
         </>
       )}
     </section>
+    </>
   );
 }
 
