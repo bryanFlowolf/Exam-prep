@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { listExams, listReports, loadQuality, resolveReport, setQuestionActive, type ReportRow } from '../lib/data';
+import { listExams, listReports, loadCalibration, loadQuality, resolveReport, setQuestionActive, type ReportRow } from '../lib/data';
 import { LETTERS, fmtDate } from '../lib/exam';
 import { QL } from '../lib/lang';
-import type { Domain, Exam, Question, QuestionReport, QuestionStat } from '../lib/types';
+import type { Calibration, Domain, Exam, Question, QuestionReport, QuestionStat } from '../lib/types';
 import { MIN_STAT } from '../components/QuestionExtras';
 import { AdminTabs } from './Admin';
 import Stem from '../components/Stem';
@@ -25,6 +25,7 @@ export default function AdminQuality() {
       <AdminTabs />
       <Reports />
       <Quality />
+      <CalibrationPanel />
     </main>
   );
 }
@@ -187,3 +188,51 @@ function Quality() {
     </section>
   );
 }
+
+/** Prediction vs official results, anonymous and only with 3+ results per row. */
+function CalibrationPanel() {
+  const [rows, setRows] = useState<{ label: string; c: Calibration }[] | null>(null);
+  useEffect(() => {
+    (async () => {
+      const exams = await listExams().catch(() => []);
+      const all = await loadCalibration(null);
+      const per = await Promise.all(exams.map(async (e) => ({ label: `${e.code || e.name}`, c: await loadCalibration(e.id) })));
+      setRows([
+        ...(all ? [{ label: 'Todos los exámenes', c: all }] : []),
+        ...per.filter((x): x is { label: string; c: Calibration } => Boolean(x.c && x.c.n > 0)),
+      ]);
+    })();
+  }, []);
+  const p = (x: number | null, d = 0) => (x === null ? '—' : `${(x * 100).toFixed(d)}%`);
+  return (
+    <section className="panel">
+      <h2 className="ph">Calibración de la predicción</h2>
+      <p className="note">Cuando alguien registra su resultado oficial, se guarda con la nota estimada y la probabilidad que la app le daba ese día. Aquí se compara de forma anónima (sin cifras por debajo de 3 resultados). La app corrige la nota estimada con el sesgo medio en cuanto hay 3 resultados con nota: primero con los de cada examen y, si no hay bastantes, con los de todos.</p>
+      {!rows && <p className="note">Cargando…</p>}
+      {rows && !rows.length && <p className="note">Todavía no hay resultados oficiales registrados (o falta aplicar la migración 20261129000000_study.sql).</p>}
+      {rows && rows.length > 0 && (
+        <div className="table-wrap">
+          <table className="simple">
+            <thead><tr><th>Examen</th><th>Resultados</th><th>Con nota</th><th>Sesgo medio</th><th>Desviación</th><th>Prob. media prevista</th><th>Aprobados reales</th><th>Brier</th><th>Por tramo de probabilidad</th></tr></thead>
+            <tbody>
+              {rows.map(({ label, c }) => (
+                <tr key={label}>
+                  <td>{label}</td>
+                  <td className="mono">{c.n}</td>
+                  <td className="mono">{c.n_scored}</td>
+                  <td className="mono" title="Nota estimada menos nota real: positivo = la app sobrestima">{c.mean_bias === null ? '—' : `${c.mean_bias > 0 ? '+' : ''}${(c.mean_bias * 100).toFixed(1)} pts`}</td>
+                  <td className="mono">{c.sd_resid === null ? '—' : `${(c.sd_resid * 100).toFixed(1)} pts`}</td>
+                  <td className="mono">{p(c.mean_prob)}</td>
+                  <td className="mono">{p(c.pass_rate)}</td>
+                  <td className="mono" title="0 = perfecto; 0,25 = como tirar una moneda">{c.brier === null ? '—' : c.brier.toFixed(3)}</td>
+                  <td className="mono">{c.bins ? c.bins.map((b) => `${Math.round(b.lo * 100)}–${Math.round(b.hi * 100)}%: ${b.passed}/${b.n}`).join(' · ') : n3(c.n)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+const n3 = (n: number) => (n < 3 ? `faltan ${3 - n} para ver cifras` : '—');

@@ -1,4 +1,4 @@
-import type { Attempt, Domain, Mode, Question, ReviewItem } from './types';
+import type { Attempt, Calibration, Domain, Mode, Question, ReviewItem } from './types';
 import { shuffle } from './exam';
 
 /** Modes that measure readiness. Review and "last wrong" are biased towards failed questions; team questions are not the exam's. */
@@ -66,13 +66,55 @@ export function readiness(domains: Domain[], totals: DomainTotals, passNote: str
     est += (Number(d.weight) / weightSum) * shrunk;
     return { domain: d, ok: t.ok, total: t.total, acc: t.total ? t.ok / t.total : null, shrunk };
   });
-  let probability: number | null = null;
-  if (answered >= MIN_ANSWERS) {
-    // Sampling error of the answers seen, plus a floor for how different the real exam can be.
-    const se = Math.sqrt((est * (1 - est)) / answered + 0.04 ** 2);
-    probability = normalCdf((est - pass) / se);
-  }
+  const probability = answered >= MIN_ANSWERS ? passProbability(est, answered, pass) : null;
   return { pass, answered, coverage: covered / weightSum, estimate: answered ? est : null, probability, domains: rows };
+}
+
+/** Sampling error of the answers seen, plus a floor for how different the real exam can be. */
+export function passProbability(est: number, answered: number, pass: number, floor = 0.04): number {
+  const se = Math.sqrt((est * (1 - est)) / answered + floor ** 2);
+  return normalCdf((est - pass) / se);
+}
+
+export type CalibrationInfo = {
+  /** Where the correction comes from: this exam's results, or all exams' when this one has too few. */
+  source: 'exam' | 'all';
+  /** Results with a score used for the correction. */
+  scored: number;
+  /** Results with pass/fail used for the reliability check. */
+  results: number;
+  /** Points subtracted from the raw estimate (positive = the app was overestimating). */
+  shift: number;
+  /** Real-exam spread used instead of the default 4 points. */
+  floor: number;
+};
+export type CalibratedReadiness = Readiness & { raw: { estimate: number | null; probability: number | null }; calibration: CalibrationInfo | null };
+
+/** Minimum results with a score before real results correct the estimate. */
+export const MIN_CALIBRATION = 3;
+// How many results the correction needs to count fully: below that it is pulled towards no correction.
+const CAL_PRIOR = { exam: 8, all: 16 } as const;
+const DEFAULT_FLOOR = 0.04;
+
+/**
+ * Corrects the estimate with real exam results: if people who recorded their official score were
+ * scored lower (or higher) than the app predicted, the estimate moves by that average gap, shrunk
+ * while there are few results, and the probability uses the spread actually observed.
+ */
+export function calibrate(r: Readiness, cal: { exam: Calibration | null; all: Calibration | null } | null | undefined): CalibratedReadiness {
+  const raw = { estimate: r.estimate, probability: r.probability };
+  const pick = (c: Calibration | null, source: 'exam' | 'all') =>
+    c && c.mean_bias !== null && c.n_scored >= MIN_CALIBRATION ? { c, source } : null;
+  const chosen = pick(cal?.exam ?? null, 'exam') || pick(cal?.all ?? null, 'all');
+  if (!chosen || r.estimate === null) return { ...r, raw, calibration: null };
+  const { c, source } = chosen;
+  const k = c.n_scored / (c.n_scored + CAL_PRIOR[source]);
+  const shift = (c.mean_bias || 0) * k;
+  const sd = c.sd_resid ?? DEFAULT_FLOOR;
+  const floor = Math.min(0.12, Math.max(0.03, Math.sqrt((DEFAULT_FLOOR ** 2 * CAL_PRIOR[source] + sd ** 2 * c.n_scored) / (c.n_scored + CAL_PRIOR[source]))));
+  const estimate = Math.min(1, Math.max(0, r.estimate - shift));
+  const probability = r.answered >= MIN_ANSWERS ? passProbability(estimate, r.answered, r.pass, floor) : null;
+  return { ...r, estimate, probability, raw, calibration: { source, scored: c.n_scored, results: c.n, shift, floor } };
 }
 
 /** Standard normal CDF (Abramowitz–Stegun 7.1.26, error < 1.5e-7). */

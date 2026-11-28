@@ -9,8 +9,9 @@ import Tutor from '../components/Tutor';
 import ScenarioPane from '../components/ScenarioPane';
 import { DocLinks, ReportButton, StatLine } from '../components/QuestionExtras';
 import Stem from '../components/Stem';
+import { dueAt, dueLabel, endOfToday, isMastered } from '../lib/srs';
 
-type Filter = 'all' | 'wrong' | 'flag';
+type Filter = 'all' | 'due' | 'wrong' | 'flag';
 
 export default function Review() {
   const { slug = '' } = useParams();
@@ -29,11 +30,12 @@ export default function Review() {
   const entries = data.questions
     .filter((q) => data.review.has(q.id))
     .map((q) => ({ q, r: data.review.get(q.id)! }))
-    .filter(({ r }) => filter === 'all' || (filter === 'wrong' ? r.wrong_count > 0 : r.flagged))
-    .sort((a, b) => b.r.wrong_count - a.r.wrong_count || (domains[a.q.domain_id]?.code || '').localeCompare(domains[b.q.domain_id]?.code || ''));
+    .filter(({ r }) => filter === 'all' || (filter === 'due' ? dueAt(r) <= endOfToday() : filter === 'wrong' ? r.wrong_count > 0 : r.flagged))
+    .sort((a, b) => (filter === 'due' ? dueAt(a.r) - dueAt(b.r) : 0) || b.r.wrong_count - a.r.wrong_count || (domains[a.q.domain_id]?.code || '').localeCompare(domains[b.q.domain_id]?.code || ''));
   const all = [...data.review.values()].filter((r) => data.questions.some((q) => q.id === r.question_id));
   const wrong = all.filter((r) => r.wrong_count > 0).length;
   const flag = all.filter((r) => r.flagged).length;
+  const due = all.filter((r) => dueAt(r) <= endOfToday()).length;
 
   const practise = () => {
     const items = shuffle(entries.map((e) => e.q)).map(toItem);
@@ -61,7 +63,7 @@ export default function Review() {
       <div className="row">
         <button className="btn solid" disabled={!entries.length} onClick={practise}>Practicar {filter === 'all' ? 'la lista' : 'este filtro'} ({entries.length})</button>
         <span className="spacer" />
-        {([['all', 'Todas'], ['wrong', 'Falladas'], ['flag', 'Marcadas']] as [Filter, string][]).map(([k, l]) => (
+        {([['all', 'Todas'], ['due', `Tocan hoy (${due})`], ['wrong', 'Falladas'], ['flag', 'Marcadas']] as [Filter, string][]).map(([k, l]) => (
           <button key={k} className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l}</button>
         ))}
       </div>
@@ -73,6 +75,7 @@ export default function Review() {
               {r.wrong_count > 0 && <span className="tag" style={{ color: 'var(--bad)' }}>Fallada {r.wrong_count} {r.wrong_count === 1 ? 'vez' : 'veces'}</span>}
               {r.flagged && <span className="tag multi">Marcada</span>}
               <span className="tag">Última vez: {r.last_result} · {fmtDate(r.last_at)}</span>
+              <span className={`tag rtag${dueAt(r) <= endOfToday() ? ' due' : ''}`} title="Próximo repaso espaciado">{isMastered(r) ? 'Dominada · ' : ''}Próximo repaso: {dueLabel(r).toLowerCase()}</span>
             </div>
             {t.missing && <div className="qhead"><span className="tag">{L.missing}</span></div>}
             {q.scenario && scenarios[q.scenario] && <ScenarioPane scenario={scenarios[q.scenario]} lang={lang} collapsible defaultOpen={false} />}

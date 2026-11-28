@@ -95,6 +95,51 @@ export type ReviewItem = {
   last_pick: number[];
   last_mode: string;
   last_at: string;
+  /** Spaced repetition (study migration): next review, interval in days, ease factor and hits in a row. */
+  due_at?: string | null;
+  interval_days?: number;
+  ease?: number;
+  streak?: number;
+};
+
+/** Personal study preferences for one exam (exam_plans). study_days uses 0 = Sunday … 6 = Saturday. */
+export type ExamPlan = { target_date: string | null; daily_minutes: number; study_days: number[] };
+
+/** Official exam result with the app's prediction on that day. score is a fraction (720/1000 → 0.72). */
+export type ExamResult = {
+  id: string;
+  exam_id: string;
+  taken_on: string;
+  passed: boolean;
+  score: number | null;
+  predicted_estimate: number | null;
+  predicted_probability: number | null;
+  predicted_answers: number;
+  pass_mark: number | null;
+  created_at: string;
+};
+
+/** Anonymous prediction-vs-result aggregate (prediction_calibration). Figures are null below 3 results. */
+export type Calibration = {
+  n: number;
+  n_scored: number;
+  mean_bias: number | null;
+  sd_resid: number | null;
+  brier: number | null;
+  pass_rate: number | null;
+  mean_prob: number | null;
+  bins: { lo: number; hi: number; n: number; passed: number }[] | null;
+};
+
+export type TeamActivityRow = {
+  user_id: string;
+  exam_id: string;
+  active_days_14: number;
+  answered_7: number;
+  due_reviews: number;
+  daily_minutes: number | null;
+  result_on: string | null;
+  result_passed: boolean | null;
 };
 
 export type Attempt = {
@@ -109,7 +154,7 @@ export type Attempt = {
   finished_at: string;
 };
 
-export type Mode = 'sim' | 'mini' | 'practice' | 'review' | 'team' | 'last_wrong' | 'targeted';
+export type Mode = 'sim' | 'mini' | 'practice' | 'review' | 'team' | 'last_wrong' | 'targeted' | 'daily' | 'spaced';
 
 export type Profile = { id: string; display_name: string; is_admin: boolean; /** Training editor (training migration). */ is_editor?: boolean };
 

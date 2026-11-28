@@ -9,10 +9,13 @@ import { scText } from '../lib/lang';
 import { resetSeen, saveTargetDate } from '../lib/data';
 import type { Mode, Question } from '../lib/types';
 import { guideFor } from '../lib/registration';
-import { MIN_ANSWERS, READY_WINDOW, pct, readiness, recentTotals, targetedPool, verdict, weakestDomains } from '../lib/readiness';
+import { MIN_ANSWERS, READY_WINDOW, calibrate, pct, readiness, recentTotals, targetedPool, verdict, weakestDomains } from '../lib/readiness';
+import { dueForecast, dueQueue, isMastered } from '../lib/srs';
+import StudyPlanPanel from '../components/StudyPlanPanel';
+import OfficialResult from '../components/OfficialResult';
 
 const MODE_LABEL: Record<Mode, string> = {
-  sim: 'Simulacro', mini: 'Mini-examen', practice: 'Práctica', review: 'Repaso', team: 'Equipo', last_wrong: 'Falladas', targeted: 'Práctica dirigida',
+  sim: 'Simulacro', mini: 'Mini-examen', practice: 'Práctica', review: 'Repaso', team: 'Equipo', last_wrong: 'Falladas', targeted: 'Práctica dirigida', daily: 'Sesión del plan', spaced: 'Repaso espaciado',
 };
 
 export default function ExamHome() {
@@ -34,10 +37,13 @@ export default function ExamHome() {
     const unseen = bank.filter((q) => !data.seen.has(q.id)).length;
     const reviewIds = new Set([...data.review.keys()].filter((id) => data.questions.some((q) => q.id === id)));
     const lastScored = data.attempts.find((a) => a.mode === 'sim' || a.mode === 'mini' || a.mode === 'practice');
-    const ready = readiness(data.domains, recentTotals(data.attempts), data.exam.passing_note);
+    const ready = calibrate(readiness(data.domains, recentTotals(data.attempts), data.exam.passing_note), data.calibration);
     const weak = weakestDomains(ready);
     const trend = data.attempts.filter((a) => (a.mode === 'sim' || a.mode === 'mini') && a.total).slice(0, 8).reverse();
-    return { bank, team, unseen, reviewIds, lastScored, ready, weak, trend };
+    const due = dueQueue(data.questions, data.review, data.domains);
+    const forecast = dueForecast(data.questions, data.review, 7);
+    const mastered = [...data.review.values()].filter((r) => reviewIds.has(r.question_id) && isMastered(r)).length;
+    return { bank, team, unseen, reviewIds, lastScored, ready, weak, trend, due, forecast, mastered };
   }, [data]);
 
   if (error) return <main className="wrap"><div className="msg err" style={{ marginTop: 24 }}>{error}</div></main>;
@@ -120,6 +126,14 @@ export default function ExamHome() {
           </div>
         );
       })}
+      {r.calibration && (
+        <p className="note calib">
+          Ajustada con <b>{r.calibration.scored} resultados oficiales reales</b>{r.calibration.source === 'all' ? ' de todos los exámenes' : ' de este examen'}:
+          {Math.abs(r.calibration.shift) < 0.005 ? ' la predicción ya coincidía con las notas reales.' : <> la app {r.calibration.shift > 0 ? 'sobrestimaba' : 'infravaloraba'} la nota, así que se {r.calibration.shift > 0 ? 'restan' : 'suman'} {Math.abs(r.calibration.shift * 100).toFixed(1)} puntos (sin ajustar: {pct(r.raw.estimate)}).</>}
+        </p>
+      )}
+      <div className="eyebrow" style={{ margin: '14px 0 6px' }}>Resultado oficial</div>
+      <OfficialResult data={data} update={update} />
       <p className="note" style={{ marginTop: 10 }}>Se calcula con tus últimos {READY_WINDOW} intentos de simulacro, mini-examen y práctica por dominio (los repasos y la práctica dirigida no cuentan porque se centran en lo que fallaste). Cada dominio pesa como en el examen oficial y los dominios con pocas respuestas cuentan como un 50 % hasta que tengas datos. Es una orientación, no una garantía.</p>
       </div>}
     </section>
@@ -160,6 +174,8 @@ export default function ExamHome() {
       </header>
 
       {readinessPanel()}
+
+      <StudyPlanPanel data={data} bank={stats.bank} ready={r} start={start} update={update} />
 
       <section className="grid-cards">
         <div className="card primary">
@@ -219,6 +235,21 @@ export default function ExamHome() {
             : <>Todavía no hay resultados tuyos: empieza por los dominios que más pesan, <b>{stats.weak.map((w) => w.domain.code).join(' y ')}</b>.</>}</p>
           <div className="meta">20 preguntas · corrección al momento</div>
           <button className="btn" disabled={!stats.weak.length} onClick={() => start('targeted', targetedPool(stats.weak.map((w) => w.domain), stats.bank, data.review, data.seen).map(toItem), `Práctica dirigida: ${stats.weak.map((w) => w.domain.code).join(' y ')}`)}>Practicar puntos débiles</button>
+        </div>
+        <div className="card spaced">
+          <div className="eyebrow">Repaso espaciado</div>
+          <h2>Lo que toca repasar hoy</h2>
+          <p>Cada pregunta que fallas vuelve mañana; si la aciertas, vuelve cada vez más tarde (3, 7, 15 días…). Los dominios flojos y las preguntas difíciles vuelven antes, y todo pasa una última vez antes de tu examen.</p>
+          <div className="forecast" aria-label="Repasos de los próximos 7 días">
+            {stats.forecast.map((n, i) => {
+              const max = Math.max(1, ...stats.forecast);
+              return <i key={i} title={`${i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : `En ${i} días`}: ${n}`} className={i === 0 ? 'now' : ''} style={{ height: `${Math.max(4, (n / max) * 100)}%` }} />;
+            })}
+          </div>
+          <div className="meta">{stats.due.length} para hoy · {stats.forecast[1]} mañana · {stats.mastered} dominadas</div>
+          <button className={`btn ${stats.due.length ? 'solid' : ''}`} disabled={!stats.due.length} onClick={() => start('spaced', stats.due.slice(0, 40).map(toItem), 'Repaso espaciado')}>
+            {stats.due.length ? `Repasar ${Math.min(40, stats.due.length)} preguntas` : 'Nada pendiente hoy'}
+          </button>
         </div>
         <div className="card">
           <div className="eyebrow">Solo tú la ves</div>

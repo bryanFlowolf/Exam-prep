@@ -22,6 +22,8 @@ Aplicación para preparar certificaciones: simulacros con el reparto oficial por
 | Cursos internos y sus lecciones | Solo quien los tiene asignados (directamente o por equipo), además de administradores y editores de formación. La sección *Formación* no aparece a quien no tiene nada asignado |
 | Preguntas del test de un curso (con su respuesta) | Solo administradores y editores de formación. El test se reparte y se corrige en el servidor |
 | Avance en lecciones, intentos de test, certificados y firmas de conformidad | Su dueño, y los administradores y editores de formación (es la evidencia de la formación obligatoria) |
+| Plan de estudio (minutos al día, días de estudio) y programación del repaso espaciado | Solo su dueño (los responsables de su equipo ven sus minutos al día y cuántos repasos tiene pendientes si comparte su progreso) |
+| Resultado oficial del examen | Solo su dueño (y, si comparte su progreso, los responsables de su equipo ven si aprobó y la fecha). Para calibrar la predicción solo se usa un agregado anónimo y sin cifras por debajo de 3 resultados |
 | Consultas al tutor IA | Nadie: no se guardan. Solo se cuenta cuántas hace cada persona al día para aplicar el límite |
 
 Los emails están en el sistema de autenticación de Supabase. Como excepción, cada registro de formación completada guarda una copia del nombre y el email de la persona en el momento de completarla, para que la evidencia se conserve aunque la cuenta se borre.
@@ -37,7 +39,8 @@ Los emails están en el sistema de autenticación de Supabase. Como excepción, 
    - `supabase/migrations/20261119000200_keepalive.sql` (función mínima para evitar la pausa por inactividad del plan gratuito).
    - `supabase/migrations/20261123000000_i18n.sql` (traducciones de las preguntas).
    - `supabase/migrations/20261124000000_insights.sql` (panel de preparación, reportes y estadísticas de preguntas, equipos y enlaces de documentación);
-   - `supabase/migrations/20261127000000_training.sql` (formación interna y límite del tutor IA).
+   - `supabase/migrations/20261127000000_training.sql` (formación interna y límite del tutor IA), `20261127000100_training_assigned.sql`, `20261127000200_tutor_use.sql` y `20261128000000_scenarios.sql`;
+   - `supabase/migrations/20261129000000_study.sql` (plan de estudio, repaso espaciado, resultados oficiales y panel del responsable).
 3. En **SQL Editor**, ejecuta `supabase/seed.sql` para cargar el examen CCDV-F.
 4. En **Authentication → URL Configuration**:
    - **Site URL:** la URL de Vercel (por ejemplo `https://exam-prep.vercel.app`).
@@ -119,8 +122,11 @@ Crea un JSON con este formato (ver `content/exams/anthropic-ccdv-f.json`) y súb
 
 - **Panel de preparación** (página de cada examen): nota estimada ponderada por el peso oficial de cada dominio, probabilidad de aprobar frente al corte del examen, evolución de los simulacros y fecha prevista del examen. Usa los últimos 20 simulacros, mini-exámenes y prácticas; los dominios con pocas respuestas cuentan como un 50 % hasta tener datos. La lógica está en `src/lib/readiness.ts` y la vista de equipos usa la misma.
 - **Práctica dirigida:** 20 preguntas de los dos dominios donde más puntos puedes ganar (distancia al objetivo × peso), empezando por las que fallaste.
+- **Plan de estudio** (página de cada examen): con la fecha del examen, los minutos al día y los días de estudio, divide el tiempo en fases (base, refuerzo, simulación, víspera), coloca un mini-examen de control cada 7 días y simulacros completos unos 10 y 3 días antes, y prepara la sesión de hoy: repasos que tocan, preguntas de los dominios con más puntos en juego y preguntas nuevas, en proporciones que cambian con la fase. Avisa si al ritmo actual no da tiempo a ver el banco. La lógica está en `src/lib/plan.ts`.
+- **Repaso espaciado adaptativo:** cada pregunta fallada vuelve al día siguiente y, cada vez que se acierta, más tarde (1, 3, 7 días y luego el intervalo por la facilidad). Los intervalos se acortan en los dominios flojos y en las preguntas que casi nadie acierta, y nada se programa después de la víspera del examen. La tarjeta *Repaso espaciado* muestra lo que toca hoy y la previsión de la semana; la lista de repaso muestra el próximo repaso de cada pregunta. Lógica en `src/lib/srs.ts`.
+- **Predicción calibrada con resultados reales:** cada persona puede registrar su resultado oficial (aprobado y, opcionalmente, la nota). Se guarda con la predicción que la app le daba ese día. Con al menos 3 resultados con nota, la nota estimada de todos se corrige con el sesgo medio observado (primero del mismo examen; si no hay bastantes, de todos) y la probabilidad usa la dispersión real. Los administradores ven la tabla de calibración en *Calidad del banco*.
 - **Reportar pregunta:** en el examen, los resultados y la lista de repaso. Los administradores los resuelven en *Administración → Calidad del banco*, donde también ven qué preguntas casi nadie acierta y qué distractor se elige más.
-- **Equipos:** los administradores los crean en *Administración → Equipos* y nombran responsables; cada miembro decide en *Mis equipos* si comparte su progreso.
+- **Equipos:** los administradores los crean en *Administración → Equipos* y nombran responsables; cada miembro decide en *Mis equipos* si comparte su progreso. El panel del responsable muestra quién está preparado, en riesgo (examen cercano con probabilidad baja), parado o con repasos acumulados, la constancia de cada persona (días activos en dos semanas), el resultado oficial, un mapa de acierto del equipo por dominio con la sesión de equipo sugerida y exportación a CSV.
 - **Para saber más:** cada dominio tiene enlaces a la documentación oficial (campo `docs` de cada dominio en `content/exams/*.json`; para un proyecto ya desplegado, `supabase/content-updates/20261124_enlaces_documentacion.sql`).
 - **Móvil:** en pantallas pequeñas los botones del examen quedan fijos abajo, la navegación se pliega y se puede deslizar a izquierda o derecha para cambiar de pregunta. La app se puede instalar en la pantalla de inicio (`public/manifest.webmanifest`).
 
@@ -175,5 +181,7 @@ npm run dev
   psql -d prueba -f supabase/tests/rls_test.sql   # todas las líneas deben decir OK
   psql -d prueba -f supabase/migrations/20261123000000_i18n.sql -f supabase/migrations/20261124000000_insights.sql -f supabase/migrations/20261127000000_training.sql
   psql -d prueba -f supabase/tests/insights_test.sql   # reportes, estadísticas anónimas y privacidad de los equipos
+  psql -d prueba -f supabase/migrations/20261127000100_training_assigned.sql -f supabase/migrations/20261127000200_tutor_use.sql -f supabase/migrations/20261128000000_scenarios.sql -f supabase/migrations/20261129000000_study.sql
+  psql -d prueba -f supabase/tests/study_test.sql      # repaso espaciado, resultados oficiales, calibración anónima y panel del responsable
   ```
 - **Interfaz sin backend:** `npx vite --config test/vite.mock.config.ts` arranca la app con un Supabase simulado en memoria.
